@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import LoginScreen from "./src/screens/LoginScreen";
 import RegisterScreen from "./src/screens/RegisterScreen";
@@ -26,6 +27,7 @@ export default function App() {
   const Screen = SCREENS[current];
 
   return (
+    <SafeAreaProvider>
     <View style={{ flex: 1 }}>
       <View style={styles.devBar}>
         {Object.keys(SCREENS).map((name) => (
@@ -37,11 +39,12 @@ export default function App() {
 
       <Screen />
     </View>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  devBar: { flexDirection: "row", flexWrap: "wrap", gap: 8, padding: 10, backgroundColor: "#f8fafc" },
+  devBar: { flexDirection: "row", flexWrap: "wrap", gap: 8, padding: 40, backgroundColor: "#f8fafc" },
   devBtn: { paddingVertical: 6, paddingHorizontal: 10, borderWidth: 1, borderColor: "#e2e8f0", borderRadius: 10 },
   devBtnText: { fontWeight: "700" },
 });

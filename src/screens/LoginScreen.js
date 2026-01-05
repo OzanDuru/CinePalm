@@ -2,6 +2,8 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // 👁️ icon
+import ScreenContainer from "../components/ScreenContainer";
+
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -9,6 +11,7 @@ export default function LoginScreen() {
   const [showPass, setShowPass] = useState(false); // 👈 yeni state
 
   return (
+    <ScreenContainer>
     <View style={styles.container}>
       <Text style={styles.header}>Login</Text>
       <Text style={styles.desc}>
@@ -63,6 +66,7 @@ export default function LoginScreen() {
         </Pressable>
       </View>
     </View>
+    </ScreenContainer>
   );
 }
 

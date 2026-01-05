@@ -1,9 +1,12 @@
 // src/screens/ProfileScreen.js
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
+import ScreenContainer from "../components/ScreenContainer";
+
 
 export default function ProfileScreen() {
   return (
+    <ScreenContainer>
     <View style={styles.container}>
       <Text style={styles.header}>Profile</Text>
       <Text style={styles.desc}>Kullanıcı bilgisi + logout (demo UI).</Text>
@@ -17,6 +20,7 @@ export default function ProfileScreen() {
         <Text style={styles.primaryBtnText}>Logout</Text>
       </Pressable>
     </View>
+    </ScreenContainer>
   );
 }
 

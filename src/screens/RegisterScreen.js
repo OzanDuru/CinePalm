@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, Pressable, StyleSheet } from "react-native";
+import ScreenContainer from "../components/ScreenContainer";
+
 
 export default function RegisterScreen() {
     const [email, setEmail] = useState("");
     const [pass, setPass] = useState("");
     return (
+        <ScreenContainer>
     <View style={styles.container}>
         <Text style={styles.header}>Register</Text>
         <Text style={styles.desc}>Yeni kullanıcı kayıt ekranı (demo UI).</Text>
@@ -34,6 +37,7 @@ export default function RegisterScreen() {
 
         
     </View>
+    </ScreenContainer>
 );
 
 }

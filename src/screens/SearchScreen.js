@@ -1,6 +1,8 @@
 // src/screens/SearchScreen.js
 import React, { useState } from "react";
 import { View, Text, TextInput, FlatList, StyleSheet } from "react-native";
+import ScreenContainer from "../components/ScreenContainer";
+
 
 const DUMMY_RESULTS = [
   { id: "1", title: "Avatar" },
@@ -12,6 +14,7 @@ export default function SearchScreen() {
   const [q, setQ] = useState("");
 
   return (
+    <ScreenContainer>
     <View style={styles.container}>
       <Text style={styles.header}>Search</Text>
       <Text style={styles.desc}>Arama (demo). Week 3'te TMDB bağlanacak.</Text>
@@ -35,6 +38,7 @@ export default function SearchScreen() {
         )}
       />
     </View>
+    </ScreenContainer>
   );
 }
 

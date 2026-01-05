@@ -1,11 +1,14 @@
 // src/screens/FavoritesScreen.js
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import ScreenContainer from "../components/ScreenContainer";
+
 
 export default function FavoritesScreen() {
   const isEmpty = true; // şimdilik boş senaryo
 
   return (
+    <ScreenContainer>
     <View style={styles.container}>
       <Text style={styles.header}>My Lists</Text>
       <Text style={styles.desc}>Favorites / Watchlist (demo UI).</Text>
@@ -21,6 +24,7 @@ export default function FavoritesScreen() {
         <Text>(Buraya sonra liste gelecek)</Text>
       )}
     </View>
+    </ScreenContainer>
   );
 }
 

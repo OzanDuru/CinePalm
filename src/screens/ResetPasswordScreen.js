@@ -1,11 +1,14 @@
 // src/screens/ResetPasswordScreen.js
 import React, { useState } from "react";
 import { View, Text, TextInput, Pressable, StyleSheet } from "react-native";
+import ScreenContainer from "../components/ScreenContainer";
+
 
 export default function ResetPasswordScreen() {
   const [email, setEmail] = useState("");
 
   return (
+    <ScreenContainer>
     <View style={styles.container}>
       <Text style={styles.header}>Reset Password</Text>
       <Text style={styles.desc}>
@@ -29,6 +32,7 @@ export default function ResetPasswordScreen() {
         <Text style={styles.link}>Back to Login</Text>
       </Pressable>
     </View>
+    </ScreenContainer>
   );
 }
 

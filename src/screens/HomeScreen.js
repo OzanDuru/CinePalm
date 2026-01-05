@@ -1,6 +1,8 @@
 // src/screens/HomeScreen.js
 import React from "react";
 import { View, Text, FlatList, Pressable, StyleSheet } from "react-native";
+import ScreenContainer from "../components/ScreenContainer";
+
 
 const DUMMY = [
   { id: "1", title: "Interstellar" },
@@ -11,6 +13,7 @@ const DUMMY = [
 
 export default function HomeScreen() {
   return (
+    <ScreenContainer>
     <View style={styles.container}>
       <Text style={styles.header}>Home</Text>
       <Text style={styles.desc}>Trending & Popular (şimdilik dummy liste).</Text>
@@ -27,6 +30,7 @@ export default function HomeScreen() {
         )}
       />
     </View>
+    </ScreenContainer>
   );
 }
 

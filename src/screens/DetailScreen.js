@@ -1,9 +1,12 @@
 // src/screens/DetailScreen.js
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
+import ScreenContainer from "../components/ScreenContainer";
+
 
 export default function DetailScreen() {
   return (
+    <ScreenContainer>
     <View style={styles.container}>
       <Text style={styles.header}>Detail</Text>
       <Text style={styles.desc}>Seçilen içerik detay sayfası (demo UI).</Text>
@@ -30,6 +33,7 @@ export default function DetailScreen() {
         </Pressable>
       </View>
     </View>
+    </ScreenContainer>
   );
 }
 
