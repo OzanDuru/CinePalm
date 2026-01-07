@@ -10,12 +10,15 @@ import Button from "../components/Button";
 import theme from "../theme";
 import { getMovieDetails } from "../services/tmdb";
 import { buildPosterUrl } from "../constants/images";
+import { isFavorite as checkFavorite, toggleFavorite } from "../utils/favoritesStorage";
 
 export default function DetailScreen({ route, navigation }) {
   const movieId = route?.params?.id;
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [favorite, setFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   const genresText = useMemo(() => {
     if (!movie?.genres?.length) return "No genres listed.";
@@ -44,6 +47,44 @@ export default function DetailScreen({ route, navigation }) {
   useEffect(() => {
     loadDetails();
   }, [loadDetails]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadFavorite() {
+      if (!movie?.id) return;
+      setFavoriteLoading(true);
+      try {
+        const value = await checkFavorite(movie.id);
+        if (active) setFavorite(value);
+      } finally {
+        if (active) setFavoriteLoading(false);
+      }
+    }
+
+    loadFavorite();
+    return () => {
+      active = false;
+    };
+  }, [movie]);
+
+  const handleToggleFavorite = useCallback(async () => {
+    if (!movie) return;
+    setFavoriteLoading(true);
+    try {
+      const result = await toggleFavorite({
+        id: movie.id,
+        title: movie.title,
+        poster_path: movie.poster_path,
+        vote_average: movie.vote_average,
+        overview: movie.overview,
+        release_date: movie.release_date,
+      });
+      setFavorite(result.isFavorite);
+    } finally {
+      setFavoriteLoading(false);
+    }
+  }, [movie]);
 
   if (loading) {
     return (
@@ -106,7 +147,14 @@ export default function DetailScreen({ route, navigation }) {
         </Text>
 
         <View style={styles.actions}>
-          <Button title="Back" variant="secondary" onPress={() => navigation.goBack()} />
+          <Button
+            title={favorite ? "Remove Favorite" : "Add Favorite"}
+            variant={favorite ? "secondary" : "primary"}
+            onPress={handleToggleFavorite}
+            disabled={favoriteLoading}
+          />
+          <View style={styles.spacer} />
+          <Button title="Back" variant="ghost" onPress={() => navigation.goBack()} />
         </View>
       </ScrollView>
     </ScreenContainer>
@@ -142,5 +190,9 @@ const styles = StyleSheet.create({
   },
   actions: {
     marginTop: theme.spacing.lg,
+    gap: theme.spacing.sm,
+  },
+  spacer: {
+    height: theme.spacing.xs,
   },
 });

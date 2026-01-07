@@ -1,161 +1,134 @@
-// src/screens/FavoritesScreen.js
-import React, { useCallback, useContext, useEffect, useState } from "react";
-import { View, Text, StyleSheet, FlatList, Pressable, Alert } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { View, FlatList, Pressable, StyleSheet } from "react-native";
 import ScreenContainer from "../components/ScreenContainer";
-
-import EmptyState from "../components/EmptyState";
 import LoadingState from "../components/LoadingState";
+import EmptyState from "../components/EmptyState";
+import Text from "../components/Text";
+import Card from "../components/Card";
+import PosterImage from "../components/PosterImage";
+import RatingBadge from "../components/RatingBadge";
+import Button from "../components/Button";
+import theme from "../theme";
+import { getFavorites, removeFavorite } from "../utils/favoritesStorage";
+import { buildPosterUrl } from "../constants/images";
+import { useIsFocused } from "@react-navigation/native";
 
-import { AuthContext } from "../firebase/AuthContext";
-import { listFavorites, removeFavorite, listWatchlist, removeWatchlist } from "../firebase/db";
+function FavoriteItem({ item, onPress, onRemove }) {
+  return (
+    <Pressable onPress={() => onPress(item)}>
+      <Card style={styles.card}>
+        <PosterImage uri={buildPosterUrl(item.poster_path)} width={80} height={120} />
+        <View style={styles.cardContent}>
+          <Text variant="subtitle" numberOfLines={2}>
+            {item.title}
+          </Text>
+          <Text variant="caption" numberOfLines={2} style={styles.overview}>
+            {item.overview || "No overview available."}
+          </Text>
+          <RatingBadge value={item.vote_average} />
+        </View>
+        <Button title="Remove" variant="ghost" onPress={() => onRemove(item.id)} />
+      </Card>
+    </Pressable>
+  );
+}
 
-export default function FavoritesScreen() {
-  // Kullanici bilgisi (login olmamissa null)
-  const { user } = useContext(AuthContext);
-
-  // Tab secimi: "favorites" veya "watchlist"
-  const [tab, setTab] = useState("favorites");
-  // Liste cekme sirasinda loading gosteriyoruz
+export default function FavoritesScreen({ navigation }) {
+  const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
-  // Firestore'dan gelen liste
-  const [items, setItems] = useState([]);
+  const [error, setError] = useState(null);
+  const isFocused = useIsFocused();
 
-  const load = useCallback(async () => {
-    if (!user) return;
+  const loadFavorites = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      // Tab'a gore dogru listeyi cekiyoruz.
-      const data = tab === "favorites" ? await listFavorites(user.uid) : await listWatchlist(user.uid);
-      setItems(data);
-    } catch (e) {
-      console.log("LIST_ERROR:", e);
-      Alert.alert("Hata", "Liste cekilemedi.");
+      const data = await getFavorites();
+      setFavorites(data);
+    } catch (err) {
+      setError(err?.message || "Failed to load favorites.");
     } finally {
       setLoading(false);
     }
-  }, [user, tab]);
+  }, []);
 
-  // user veya tab degisince listeyi yeniden cek.
   useEffect(() => {
-    load();
-  }, [load]);
+    if (isFocused) loadFavorites();
+  }, [isFocused, loadFavorites]);
 
-  async function handleRemove(itemId) {
-    if (!user) return;
-    try {
-      // Tab'a gore uygun silme fonksiyonunu kullan.
-      if (tab === "favorites") await removeFavorite(user.uid, itemId);
-      else await removeWatchlist(user.uid, itemId);
-      await load();
-    } catch (e) {
-      console.log("REMOVE_ERROR:", e);
-      Alert.alert("Hata", "Silinemedi.");
-    }
-  }
+  const handleRemove = useCallback(
+    async (id) => {
+      const updated = await removeFavorite(id);
+      setFavorites(updated);
+    },
+    [setFavorites]
+  );
 
-  if (!user) {
-    return (
-      <ScreenContainer>
-        <EmptyState title="Login gerekli" subtitle="Listelerini görmek için giriş yap." />
-      </ScreenContainer>
-    );
-  }
+  const handleSelect = (item) => navigation.navigate("Detail", { id: item.id, title: item.title });
 
   if (loading) {
     return (
       <ScreenContainer>
-        <LoadingState title="Loading..." subtitle="Fetching your list" />
+        <LoadingState title="Loading favorites..." subtitle="Fetching your list" />
+      </ScreenContainer>
+    );
+  }
+
+  if (error) {
+    return (
+      <ScreenContainer>
+        <EmptyState title="Unable to load" subtitle={error} actionLabel="Retry" onAction={loadFavorites} />
+      </ScreenContainer>
+    );
+  }
+
+  if (!favorites.length) {
+    return (
+      <ScreenContainer>
+        <EmptyState title="No favorites yet" subtitle="Add movies from the Detail screen." />
       </ScreenContainer>
     );
   }
 
   return (
     <ScreenContainer>
-      <View style={styles.container}>
-        <Text style={styles.header}>My Lists</Text>
-        <Text style={styles.desc}>Firestore: Favorites / Watchlist</Text>
-
-        {/* Tab switch */}
-        <View style={styles.switchRow}>
-          <Pressable
-            style={[styles.switchBtn, tab === "favorites" && styles.switchActive]}
-            onPress={() => setTab("favorites")}
-          >
-            <Text style={[styles.switchText, tab === "favorites" && styles.switchTextActive]}>Favorites</Text>
-          </Pressable>
-
-          <Pressable
-            style={[styles.switchBtn, tab === "watchlist" && styles.switchActive]}
-            onPress={() => setTab("watchlist")}
-          >
-            <Text style={[styles.switchText, tab === "watchlist" && styles.switchTextActive]}>Watchlist</Text>
-          </Pressable>
-        </View>
-
-        {items.length === 0 ? (
-          <EmptyState title="No items yet" subtitle="Detail ekranından eklediğin içerikler burada görünecek." />
-        ) : (
-          <FlatList
-            data={items}
-            keyExtractor={(i) => String(i.id)}
-            contentContainerStyle={{ gap: 12, paddingTop: 12, paddingBottom: 20 }}
-            renderItem={({ item }) => (
-              <View style={styles.card}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitle}>{item.title}</Text>
-                  <Text style={styles.cardSub}>id: {item.id}</Text>
-                </View>
-
-                <Pressable style={styles.delBtn} onPress={() => handleRemove(item.id)}>
-                  <Text style={styles.delText}>Remove</Text>
-                </Pressable>
-              </View>
-            )}
-          />
+      <FlatList
+        data={favorites}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={({ item }) => (
+          <FavoriteItem item={item} onPress={handleSelect} onRemove={handleRemove} />
         )}
-
-        <Pressable style={styles.refreshBtn} onPress={load}>
-          <Text style={styles.refreshText}>Refresh</Text>
-        </Pressable>
-      </View>
+        contentContainerStyle={styles.list}
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <Text variant="title">Favorites</Text>
+            <Text variant="caption">Your saved movies</Text>
+          </View>
+        }
+        showsVerticalScrollIndicator={false}
+      />
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff", gap: 10 },
-  header: { fontSize: 28, fontWeight: "800" },
-  desc: { fontSize: 14, color: "#555" },
-
-  switchRow: { flexDirection: "row", gap: 10, marginTop: 10 },
-  switchBtn: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 999,
-    paddingVertical: 10,
-    alignItems: "center",
+  list: {
+    padding: theme.spacing.lg,
+    gap: theme.spacing.lg,
   },
-  switchActive: { backgroundColor: "#111" },
-  switchText: { fontWeight: "800", color: "#111" },
-  switchTextActive: { color: "#fff" },
-
+  header: {
+    gap: theme.spacing.xs,
+  },
   card: {
-    borderWidth: 1,
-    borderColor: "#eee",
-    borderRadius: 14,
-    padding: 14,
     flexDirection: "row",
-    justifyContent: "space-between",
+    gap: theme.spacing.md,
     alignItems: "center",
-    gap: 12,
   },
-  cardTitle: { fontWeight: "900" },
-  cardSub: { color: "#666", marginTop: 2 },
-
-  delBtn: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12 },
-  delText: { fontWeight: "800" },
-
-  refreshBtn: { borderWidth: 1, borderColor: "#ddd", borderRadius: 12, padding: 12, alignItems: "center", marginTop: 10 },
-  refreshText: { fontWeight: "900" },
+  cardContent: {
+    flex: 1,
+    gap: theme.spacing.xs,
+  },
+  overview: {
+    color: theme.colors.textSecondary,
+  },
 });
