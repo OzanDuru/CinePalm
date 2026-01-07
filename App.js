@@ -1,4 +1,5 @@
 ﻿import React from "react";
+import { Text } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -29,8 +30,23 @@ function HomeStack() {
 
 function Tabs() {
   return (
-    <Tab.Navigator>
-      <Tab.Screen name="HomeTab" component={HomeStack} options={{ headerShown: false, title: "Home" }} />
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: true,
+        tabBarActiveTintColor: "#111",
+        tabBarInactiveTintColor: "#666",
+        tabBarStyle: { backgroundColor: "#fff" },
+        tabBarIcon: ({ focused }) => {
+          let icon = "[]";
+          if (route.name === "HomeTab") icon = focused ? "🏠" : "🏡";
+          if (route.name === "Search") icon = focused ? "🔎" : "🔍";
+          if (route.name === "Favorites") icon = focused ? "❤️" : "🤍";
+          if (route.name === "Profile") icon = focused ? "👤" : "👥";
+          return <Text style={{ fontSize: 18 }}>{icon}</Text>;
+        },
+      })}
+    >
+      <Tab.Screen name="HomeTab" component={HomeStack} options={{ title: "Home", headerShown: false }} />
       <Tab.Screen name="Search" component={SearchScreen} />
       <Tab.Screen name="Favorites" component={FavoritesScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
@@ -39,7 +55,7 @@ function Tabs() {
 }
 
 export default function App() {
-  console.log("ROOTSTACK APP RUNNING");
+  console.log("APP RUNNING (EMOJI TABS)");
   return (
     <NavigationContainer>
       <RootStack.Navigator>
