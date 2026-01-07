@@ -47,6 +47,7 @@ export default function HomeScreen({ navigation }) {
   const [trending, setTrending] = useState([]);
   const [popular, setPopular] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
   const [popularPage, setPopularPage] = useState(1);
@@ -71,20 +72,26 @@ export default function HomeScreen({ navigation }) {
     setPopularTotalPages(data?.total_pages ?? 1);
   }, []);
 
-  const loadAll = useCallback(async () => {
-    setLoading(true);
+  const loadAll = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
     setError(null);
     try {
       await Promise.all([loadTrending(), loadPopular(1, false)]);
     } catch (err) {
       setError(err?.message || "Failed to load movies.");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [loadTrending, loadPopular]);
 
   useEffect(() => {
     loadAll();
+  }, [loadAll]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadAll({ silent: true });
+    setRefreshing(false);
   }, [loadAll]);
 
   const handleLoadMore = useCallback(async () => {
@@ -172,6 +179,8 @@ export default function HomeScreen({ navigation }) {
             </View>
           ) : null
         }
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
         showsVerticalScrollIndicator={false}

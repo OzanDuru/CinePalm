@@ -15,8 +15,8 @@ import { useIsFocused } from "@react-navigation/native";
 
 function FavoriteItem({ item, onPress, onRemove }) {
   return (
-    <Pressable onPress={() => onPress(item)}>
-      <Card style={styles.card}>
+    <Card style={styles.card}>
+      <Pressable style={styles.cardTapArea} onPress={() => onPress(item)}>
         <PosterImage uri={buildPosterUrl(item.poster_path)} width={80} height={120} />
         <View style={styles.cardContent}>
           <Text variant="subtitle" numberOfLines={2}>
@@ -27,9 +27,9 @@ function FavoriteItem({ item, onPress, onRemove }) {
           </Text>
           <RatingBadge value={item.vote_average} />
         </View>
-        <Button title="Remove" variant="ghost" onPress={() => onRemove(item.id)} />
-      </Card>
-    </Pressable>
+      </Pressable>
+      <Button title="Remove" variant="ghost" onPress={() => onRemove(item.id)} />
+    </Card>
   );
 }
 
@@ -121,6 +121,12 @@ const styles = StyleSheet.create({
   },
   card: {
     flexDirection: "row",
+    gap: theme.spacing.md,
+    alignItems: "center",
+  },
+  cardTapArea: {
+    flexDirection: "row",
+    flex: 1,
     gap: theme.spacing.md,
     alignItems: "center",
   },
