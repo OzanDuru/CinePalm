@@ -1,6 +1,9 @@
-﻿import React from "react";
+import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 
+// EmptyState:
+// Veri olmayan durumlarda kullanilan standart bos ekran.
+// Istege bagli aksiyon butonu gosterilebilir.
 export default function EmptyState({
   title = "Nothing here",
   subtitle = "Try again later.",
@@ -12,6 +15,7 @@ export default function EmptyState({
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.sub}>{subtitle}</Text>
 
+      {/* actionLabel ve onAction varsa buton gosterilir */}
       {actionLabel && onAction ? (
         <Pressable style={styles.btn} onPress={onAction}>
           <Text style={styles.btnText}>{actionLabel}</Text>

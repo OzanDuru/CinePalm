@@ -1,4 +1,4 @@
-﻿// src/screens/FavoritesScreen.js
+// src/screens/FavoritesScreen.js
 import React, { useCallback, useContext, useEffect, useState } from "react";
 import { View, Text, StyleSheet, FlatList, Pressable, Alert } from "react-native";
 import ScreenContainer from "../components/ScreenContainer";
@@ -10,26 +10,32 @@ import { AuthContext } from "../firebase/AuthContext";
 import { listFavorites, removeFavorite, listWatchlist, removeWatchlist } from "../firebase/db";
 
 export default function FavoritesScreen() {
+  // Kullanici bilgisi (login olmamissa null)
   const { user } = useContext(AuthContext);
 
-  const [tab, setTab] = useState("favorites"); // favorites | watchlist
+  // Tab secimi: "favorites" veya "watchlist"
+  const [tab, setTab] = useState("favorites");
+  // Liste cekme sirasinda loading gosteriyoruz
   const [loading, setLoading] = useState(true);
+  // Firestore'dan gelen liste
   const [items, setItems] = useState([]);
 
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
+      // Tab'a gore dogru listeyi cekiyoruz.
       const data = tab === "favorites" ? await listFavorites(user.uid) : await listWatchlist(user.uid);
       setItems(data);
     } catch (e) {
       console.log("LIST_ERROR:", e);
-      Alert.alert("Hata", "Liste çekilemedi.");
+      Alert.alert("Hata", "Liste cekilemedi.");
     } finally {
       setLoading(false);
     }
   }, [user, tab]);
 
+  // user veya tab degisince listeyi yeniden cek.
   useEffect(() => {
     load();
   }, [load]);
@@ -37,6 +43,7 @@ export default function FavoritesScreen() {
   async function handleRemove(itemId) {
     if (!user) return;
     try {
+      // Tab'a gore uygun silme fonksiyonunu kullan.
       if (tab === "favorites") await removeFavorite(user.uid, itemId);
       else await removeWatchlist(user.uid, itemId);
       await load();
@@ -68,6 +75,7 @@ export default function FavoritesScreen() {
         <Text style={styles.header}>My Lists</Text>
         <Text style={styles.desc}>Firestore: Favorites / Watchlist</Text>
 
+        {/* Tab switch */}
         <View style={styles.switchRow}>
           <Pressable
             style={[styles.switchBtn, tab === "favorites" && styles.switchActive]}

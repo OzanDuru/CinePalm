@@ -1,8 +1,9 @@
-﻿import React from "react";
+import React from "react";
 import { View, Text, FlatList, Pressable, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import ScreenContainer from "../components/ScreenContainer";
 
+// Demo veri: ileride API/TMDB baglandiginda burasi gercek data olur.
 const DUMMY = [
   { id: "1", title: "Interstellar" },
   { id: "2", title: "The Dark Knight" },
@@ -11,9 +12,11 @@ const DUMMY = [
 ];
 
 export default function HomeScreen() {
+  // React Navigation hook: baska ekrana gitmek icin kullaniliyor.
   const navigation = useNavigation();
 
   const openDetail = (item) => {
+    // Detay ekranina parametre gonderiyoruz (id + title).
     console.log("HOME -> DETAIL NAV", item.title);
     navigation.navigate("Detail", { id: item.id, title: item.title });
   };
@@ -31,6 +34,7 @@ export default function HomeScreen() {
           keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => (
             <Pressable style={styles.card} onPress={() => openDetail(item)}>
+              {/* Gercek projede burasi film posteri olur */}
               <View style={styles.posterPlaceholder} />
               <Text style={styles.cardTitle}>{item.title}</Text>
             </Pressable>

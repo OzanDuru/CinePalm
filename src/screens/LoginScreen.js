@@ -1,4 +1,4 @@
-﻿// src/screens/LoginScreen.js
+// src/screens/LoginScreen.js
 import React, { useState } from "react";
 import { View, Text, TextInput, Pressable, StyleSheet, Alert, ActivityIndicator } from "react-native";
 import ScreenContainer from "../components/ScreenContainer";
@@ -7,13 +7,16 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 
 export default function LoginScreen({ navigation }) {
+  // Form input state'leri
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
+  // Firebase istegi sirasinda button'u disable etmek icin
   const [loading, setLoading] = useState(false);
 
   async function handleLogin() {
     const e = email.trim();
 
+    // Basit dogrulama: email ve sifre bos olamaz
     if (!e || !pass) {
       Alert.alert("Eksik bilgi", "Email ve şifre gir.");
       return;
@@ -22,10 +25,11 @@ export default function LoginScreen({ navigation }) {
     try {
       setLoading(true);
       await signInWithEmailAndPassword(auth, e, pass);
-      // Başarılı olunca RootNavigator otomatik Tabs'a geçer (user dolduğu için)
+      // Basarili olunca Auth state guncellenir ve App Tabs'a gecer.
     } catch (err) {
       console.log("LOGIN_ERROR:", err?.code, err?.message);
 
+      // Firebase hata kodlarini kullaniciya anlasilir hale getiriyoruz.
       let msg = "Giriş başarısız.";
       if (err?.code === "auth/invalid-email") msg = "Email formatı yanlış.";
       if (err?.code === "auth/user-not-found") msg = "Bu email ile kullanıcı yok. Register yap.";

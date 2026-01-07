@@ -1,4 +1,4 @@
-﻿// src/screens/ProfileScreen.js
+// src/screens/ProfileScreen.js
 import React, { useContext } from "react";
 import { View, Text, Pressable, StyleSheet, Alert } from "react-native";
 import ScreenContainer from "../components/ScreenContainer";
@@ -8,6 +8,7 @@ import { auth } from "../firebase/firebase";
 import { AuthContext } from "../firebase/AuthContext";
 
 export default function ProfileScreen() {
+  // AuthContext'ten kullanici bilgisini al.
   const { user } = useContext(AuthContext);
 
   async function handleLogout() {

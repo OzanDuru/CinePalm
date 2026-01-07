@@ -1,4 +1,4 @@
-﻿// src/screens/RegisterScreen.js
+// src/screens/RegisterScreen.js
 import React, { useState } from "react";
 import { View, Text, TextInput, Pressable, StyleSheet, Alert, ActivityIndicator } from "react-native";
 import ScreenContainer from "../components/ScreenContainer";
@@ -7,6 +7,7 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 
 export default function RegisterScreen({ navigation }) {
+  // Kayit formu input state'leri
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [pass2, setPass2] = useState("");
@@ -15,6 +16,7 @@ export default function RegisterScreen({ navigation }) {
   async function handleRegister() {
     const e = email.trim();
 
+    // Giris validasyonlari
     if (!e || !pass || !pass2) return Alert.alert("Eksik bilgi", "Email ve şifreleri gir.");
     if (pass.length < 6) return Alert.alert("Hata", "Şifre en az 6 karakter olmalı.");
     if (pass !== pass2) return Alert.alert("Hata", "Şifreler aynı değil.");
@@ -22,7 +24,7 @@ export default function RegisterScreen({ navigation }) {
     try {
       setLoading(true);
       await createUserWithEmailAndPassword(auth, e, pass);
-      // Başarılı olunca AuthContext user'ı doldurur ve RootNav otomatik Tabs'a geçer.
+      // Basarili olunca AuthContext user'i doldurur ve Tabs'a gecilir.
     } catch (err) {
       console.log("REGISTER_ERROR:", err?.code, err?.message);
       let msg = "Kayıt başarısız.";

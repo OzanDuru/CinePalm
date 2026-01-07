@@ -1,8 +1,9 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, FlatList, StyleSheet } from "react-native";
 import ScreenContainer from "../components/ScreenContainer";
 import LoadingState from "../components/LoadingState";
 
+// Demo arama sonuclari
 const DUMMY_RESULTS = [
   { id: "1", title: "Avatar" },
   { id: "2", title: "Avengers" },
@@ -10,10 +11,12 @@ const DUMMY_RESULTS = [
 ];
 
 export default function SearchScreen() {
+  // Arama input degeri
   const [q, setQ] = useState("");
+  // Baslangicta demo yukleme gosteriyoruz
   const [loading, setLoading] = useState(true);
 
-  // Demo loading (2 sn)
+  // Demo loading (2 sn) - gercek API baglandiginda bu kisim fetch olur.
   useEffect(() => {
     const t = setTimeout(() => setLoading(false), 2000);
     return () => clearTimeout(t);

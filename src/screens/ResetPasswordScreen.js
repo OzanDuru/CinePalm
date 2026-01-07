@@ -1,4 +1,4 @@
-﻿// src/screens/ResetPasswordScreen.js
+// src/screens/ResetPasswordScreen.js
 import React, { useState } from "react";
 import { View, Text, TextInput, Pressable, StyleSheet, Alert, ActivityIndicator } from "react-native";
 import ScreenContainer from "../components/ScreenContainer";
@@ -7,7 +7,9 @@ import { sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 
 export default function ResetPasswordScreen({ navigation }) {
+  // Email input state
   const [email, setEmail] = useState("");
+  // Yuklenme durumuna gore buton disable edilir
   const [loading, setLoading] = useState(false);
 
   async function handleReset() {

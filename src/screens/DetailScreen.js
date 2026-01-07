@@ -1,4 +1,4 @@
-﻿// src/screens/DetailScreen.js
+// src/screens/DetailScreen.js
 import React, { useContext, useMemo } from "react";
 import { View, Text, Pressable, StyleSheet, Alert } from "react-native";
 import ScreenContainer from "../components/ScreenContainer";
@@ -7,9 +7,13 @@ import { AuthContext } from "../firebase/AuthContext";
 import { addFavorite, addWatchlist } from "../firebase/db";
 
 export default function DetailScreen({ route, navigation }) {
+  // AuthContext uzerinden kullanici bilgisine erisiyoruz.
   const { user } = useContext(AuthContext);
+  // Home ekranindan gelen parametreler (id + title).
   const { id, title } = route.params || {};
 
+  // Detay ekraninda kaydetmek icin tek bir "item" objesi olusturulur.
+  // useMemo: ayni id/title gelirse her render'da yeniden hesaplamaz.
   const item = useMemo(() => {
     return {
       id: String(id ?? ""),
@@ -48,10 +52,12 @@ export default function DetailScreen({ route, navigation }) {
         <Text style={styles.header}>Detail</Text>
         <Text style={styles.desc}>Week 2: Firestore ekleme</Text>
 
+        {/* Poster alani (demo) */}
         <View style={styles.posterPlaceholder} />
 
         <Text style={styles.title}>{title}</Text>
 
+        {/* Metadata satiri: item id + user email */}
         <View style={styles.metaRow}>
           <Text style={styles.meta}>🆔 {id}</Text>
           <Text style={styles.meta}>👤 {user?.email ?? "Guest"}</Text>
