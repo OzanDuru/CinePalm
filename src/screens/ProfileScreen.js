@@ -1,36 +1,53 @@
-// src/screens/ProfileScreen.js
-import React from "react";
+﻿import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import ScreenContainer from "../components/ScreenContainer";
 
+export default function ProfileScreen({ navigation }) {
+  const goRoot = (screen) => {
+    const tabNav = navigation.getParent?.();
+    const rootNav = tabNav?.getParent?.();
 
-export default function ProfileScreen() {
+    if (rootNav) {
+      console.log("NAV VIA ROOT ->", screen);
+      rootNav.navigate(screen);
+    } else {
+      console.log("NAV FALLBACK ->", screen);
+      navigation.navigate(screen);
+    }
+  };
+
   return (
     <ScreenContainer>
-    <View style={styles.container}>
-      <Text style={styles.header}>Profile</Text>
-      <Text style={styles.desc}>Kullanıcı bilgisi + logout (demo UI).</Text>
+      <View style={styles.container}>
+        <Text style={styles.header}>Profile</Text>
+        <Text style={styles.desc}>Auth ekranlarına buradan geçiş (demo).</Text>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>Email</Text>
-        <Text style={styles.value}>demo@mail.com</Text>
+        <Pressable style={styles.btn} onPress={() => goRoot("Login")}>
+          <Text style={styles.btnText}>Login</Text>
+        </Pressable>
+
+        <Pressable style={styles.btn} onPress={() => goRoot("Register")}>
+          <Text style={styles.btnText}>Register</Text>
+        </Pressable>
+
+        <Pressable style={styles.btn} onPress={() => goRoot("ResetPassword")}>
+          <Text style={styles.btnText}>Reset Password</Text>
+        </Pressable>
       </View>
-
-      <Pressable style={styles.primaryBtn} onPress={() => console.log("Logout (demo)")}>
-        <Text style={styles.primaryBtnText}>Logout</Text>
-      </Pressable>
-    </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff", gap: 12 },
-  header: { fontSize: 28, fontWeight: "700" },
-  desc: { fontSize: 14, color: "#555" },
-  card: { borderWidth: 1, borderColor: "#eee", borderRadius: 14, padding: 14, gap: 6 },
-  label: { color: "#555", fontWeight: "700" },
-  value: { fontSize: 16, fontWeight: "800" },
-  primaryBtn: { backgroundColor: "#111", padding: 14, borderRadius: 12, alignItems: "center" },
-  primaryBtnText: { color: "#fff", fontWeight: "700" },
+  container: { flex: 1, padding: 20, backgroundColor: "#fff", gap: 14 },
+  header: { fontSize: 28, fontWeight: "800" },
+  desc: { color: "#555", marginBottom: 10 },
+  btn: {
+    padding: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    alignItems: "center",
+  },
+  btnText: { fontWeight: "700", fontSize: 16 },
 });

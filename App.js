@@ -1,50 +1,53 @@
-import React, { useState } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+﻿import React from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+
+import HomeScreen from "./src/screens/HomeScreen";
+import DetailScreen from "./src/screens/DetailScreen";
+
+import SearchScreen from "./src/screens/SearchScreen";
+import FavoritesScreen from "./src/screens/FavoritesScreen";
+import ProfileScreen from "./src/screens/ProfileScreen";
 
 import LoginScreen from "./src/screens/LoginScreen";
 import RegisterScreen from "./src/screens/RegisterScreen";
 import ResetPasswordScreen from "./src/screens/ResetPasswordScreen";
-import HomeScreen from "./src/screens/HomeScreen";
-import SearchScreen from "./src/screens/SearchScreen";
-import FavoritesScreen from "./src/screens/FavoritesScreen";
-import ProfileScreen from "./src/screens/ProfileScreen";
-import DetailScreen from "./src/screens/DetailScreen";
 
-const SCREENS = {
-  Login: LoginScreen,
-  Register: RegisterScreen,
-  Reset: ResetPasswordScreen,
-  Home: HomeScreen,
-  Search: SearchScreen,
-  Lists: FavoritesScreen,
-  Profile: ProfileScreen,
-  Detail: DetailScreen,
-};
+const RootStack = createNativeStackNavigator();
+const HomeStackNav = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
-export default function App() {
-  const [current, setCurrent] = useState("Home");
-  const Screen = SCREENS[current];
-
+function HomeStack() {
   return (
-    <SafeAreaProvider>
-    <View style={{ flex: 1 }}>
-      <View style={styles.devBar}>
-        {Object.keys(SCREENS).map((name) => (
-          <Pressable key={name} onPress={() => setCurrent(name)} style={styles.devBtn}>
-            <Text style={styles.devBtnText}>{name}</Text>
-          </Pressable>
-        ))}
-      </View>
-
-      <Screen />
-    </View>
-    </SafeAreaProvider>
+    <HomeStackNav.Navigator>
+      <HomeStackNav.Screen name="Home" component={HomeScreen} options={{ title: "CinePalm" }} />
+      <HomeStackNav.Screen name="Detail" component={DetailScreen} options={{ title: "Detail" }} />
+    </HomeStackNav.Navigator>
   );
 }
 
-const styles = StyleSheet.create({
-  devBar: { flexDirection: "row", flexWrap: "wrap", gap: 8, padding: 40, backgroundColor: "#f8fafc" },
-  devBtn: { paddingVertical: 6, paddingHorizontal: 10, borderWidth: 1, borderColor: "#e2e8f0", borderRadius: 10 },
-  devBtnText: { fontWeight: "700" },
-});
+function Tabs() {
+  return (
+    <Tab.Navigator>
+      <Tab.Screen name="HomeTab" component={HomeStack} options={{ headerShown: false, title: "Home" }} />
+      <Tab.Screen name="Search" component={SearchScreen} />
+      <Tab.Screen name="Favorites" component={FavoritesScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
+    </Tab.Navigator>
+  );
+}
+
+export default function App() {
+  console.log("ROOTSTACK APP RUNNING");
+  return (
+    <NavigationContainer>
+      <RootStack.Navigator>
+        <RootStack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
+        <RootStack.Screen name="Login" component={LoginScreen} />
+        <RootStack.Screen name="Register" component={RegisterScreen} />
+        <RootStack.Screen name="ResetPassword" component={ResetPasswordScreen} options={{ title: "Reset Password" }} />
+      </RootStack.Navigator>
+    </NavigationContainer>
+  );
+}
