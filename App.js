@@ -1,11 +1,15 @@
-﻿import React, { useContext } from "react";
-import { Text } from "react-native";
+﻿import React, { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
 import { Ionicons } from "@expo/vector-icons";
 
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./src/firebase/firebase";
+
+import { AuthProvider } from "./src/firebase/AuthContext";
 
 import HomeScreen from "./src/screens/HomeScreen";
 import DetailScreen from "./src/screens/DetailScreen";
@@ -17,22 +21,9 @@ import LoginScreen from "./src/screens/LoginScreen";
 import RegisterScreen from "./src/screens/RegisterScreen";
 import ResetPasswordScreen from "./src/screens/ResetPasswordScreen";
 
-import { AuthProvider, AuthContext } from "./src/firebase/AuthContext";
-import LoadingState from "./src/components/LoadingState";
-
-const AuthNav = createNativeStackNavigator();
+const RootStack = createNativeStackNavigator();
 const HomeStackNav = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
-
-function AuthStack() {
-  return (
-    <AuthNav.Navigator>
-      <AuthNav.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-      <AuthNav.Screen name="Register" component={RegisterScreen} options={{ title: "Register" }} />
-      <AuthNav.Screen name="ResetPassword" component={ResetPasswordScreen} options={{ title: "Reset Password" }} />
-    </AuthNav.Navigator>
-  );
-}
 
 function HomeStack() {
   return (
@@ -49,7 +40,7 @@ function Tabs() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: "#111",
-        tabBarInactiveTintColor: "#666",
+        tabBarInactiveTintColor: "#999",
         tabBarIcon: ({ focused, color, size }) => {
           let iconName = "home-outline";
           if (route.name === "HomeTab") iconName = focused ? "home" : "home-outline";
@@ -68,26 +59,34 @@ function Tabs() {
   );
 }
 
-function RootNav() {
-  const { user, loading } = useContext(AuthContext);
-
-  if (loading) {
-    return <LoadingState title="Starting..." subtitle="Checking session" />;
-  }
-
-  return user ? <Tabs /> : <AuthStack />;
+function AuthStack() {
+  return (
+    <RootStack.Navigator>
+      <RootStack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+      <RootStack.Screen name="Register" component={RegisterScreen} options={{ title: "Register" }} />
+      <RootStack.Screen name="ResetPassword" component={ResetPasswordScreen} options={{ title: "Reset Password" }} />
+    </RootStack.Navigator>
+  );
 }
 
 export default function App() {
   const [fontsLoaded] = useFonts(Ionicons.font);
-  if (!fontsLoaded) return null;
+  const [user, setUser] = useState(undefined); // undefined = loading, null = logged out
 
-  console.log("APP RUNNING (AUTH + TABS CLEAN ROOT)");
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => setUser(u ?? null));
+    return unsub;
+  }, []);
+
+  if (!fontsLoaded) return null;
+  if (user === undefined) return null;
+
+  console.log("APP RUNNING (AUTH GATE + PROVIDER)");
 
   return (
     <AuthProvider>
       <NavigationContainer>
-        <RootNav />
+        {user ? <Tabs /> : <AuthStack />}
       </NavigationContainer>
     </AuthProvider>
   );
