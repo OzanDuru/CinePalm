@@ -40,7 +40,16 @@ export default function ResetPasswordScreen({ navigation }) {
   return (
     <ScreenContainer>
       <View style={styles.container}>
-        <Text variant="title">Reset Password</Text>
+        <View style={styles.hero}>
+          <View style={styles.brandRow}>
+            <View style={styles.brandDot} />
+            <Text variant="title">CinePalm</Text>
+          </View>
+          <Text variant="caption" style={styles.heroSubtitle}>
+            Recover access to your account
+          </Text>
+          <Text variant="subtitle">Reset Password</Text>
+        </View>
 
         <Card style={styles.card}>
           <Text variant="caption" style={styles.label}>Email</Text>
@@ -57,7 +66,12 @@ export default function ResetPasswordScreen({ navigation }) {
 
         <Button title={loading ? "Loading..." : "Send reset email"} onPress={handleReset} disabled={loading} />
 
-        <Button title="Back to Login" variant="ghost" onPress={() => navigation.navigate("Login")} />
+        <Button
+          title="Back to Login"
+          variant="ghost"
+          onPress={() => navigation.navigate("Login")}
+          style={styles.linkButton}
+        />
       </View>
     </ScreenContainer>
   );
@@ -65,6 +79,23 @@ export default function ResetPasswordScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: theme.spacing.lg, gap: theme.spacing.lg },
+  hero: {
+    gap: theme.spacing.xs,
+  },
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.sm,
+  },
+  brandDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: theme.colors.accent,
+  },
+  heroSubtitle: {
+    color: theme.colors.textSecondary,
+  },
   card: { gap: theme.spacing.sm },
   label: { color: theme.colors.textSecondary },
   input: {
@@ -75,4 +106,5 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     backgroundColor: theme.colors.surface,
   },
+  linkButton: { alignSelf: "flex-start" },
 });

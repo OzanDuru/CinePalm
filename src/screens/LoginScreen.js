@@ -49,7 +49,16 @@ export default function LoginScreen({ navigation }) {
   return (
     <ScreenContainer>
       <View style={styles.container}>
-        <Text variant="title">Login</Text>
+        <View style={styles.hero}>
+          <View style={styles.brandRow}>
+            <View style={styles.brandDot} />
+            <Text variant="title">CinePalm</Text>
+          </View>
+          <Text variant="caption" style={styles.heroSubtitle}>
+            Sign in to your premium list
+          </Text>
+          <Text variant="subtitle">Login</Text>
+        </View>
 
         <Card style={styles.card}>
           <Text variant="caption" style={styles.label}>Email</Text>
@@ -76,9 +85,19 @@ export default function LoginScreen({ navigation }) {
 
         <Button title={loading ? "Loading..." : "Login"} onPress={handleLogin} disabled={loading} />
 
-        <View style={styles.linksRow}>
-          <Button title="Create account" variant="ghost" onPress={() => navigation.navigate("Register")} />
-          <Button title="Forgot password?" variant="ghost" onPress={() => navigation.navigate("ResetPassword")} />
+        <View style={styles.linksColumn}>
+          <Button
+            title="Create account"
+            variant="ghost"
+            onPress={() => navigation.navigate("Register")}
+            style={styles.linkButton}
+          />
+          <Button
+            title="Forgot password?"
+            variant="ghost"
+            onPress={() => navigation.navigate("ResetPassword")}
+            style={styles.linkButton}
+          />
         </View>
       </View>
     </ScreenContainer>
@@ -87,6 +106,23 @@ export default function LoginScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: theme.spacing.lg, gap: theme.spacing.lg },
+  hero: {
+    gap: theme.spacing.xs,
+  },
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.sm,
+  },
+  brandDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: theme.colors.accent,
+  },
+  heroSubtitle: {
+    color: theme.colors.textSecondary,
+  },
   card: { gap: theme.spacing.sm },
   label: { color: theme.colors.textSecondary },
   input: {
@@ -97,5 +133,6 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     backgroundColor: theme.colors.surface,
   },
-  linksRow: { flexDirection: "row", justifyContent: "space-between" },
+  linksColumn: { gap: theme.spacing.xs },
+  linkButton: { alignSelf: "flex-start" },
 });
