@@ -1,8 +1,7 @@
-// src/screens/SearchScreen.js
-import React, { useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, FlatList, StyleSheet } from "react-native";
 import ScreenContainer from "../components/ScreenContainer";
-
+import LoadingState from "../components/LoadingState";
 
 const DUMMY_RESULTS = [
   { id: "1", title: "Avatar" },
@@ -12,32 +11,47 @@ const DUMMY_RESULTS = [
 
 export default function SearchScreen() {
   const [q, setQ] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  // Demo loading (2 sn)
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 2000);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (loading) {
+    return (
+      <ScreenContainer>
+        <LoadingState title="Searching..." subtitle="Fetching demo results" />
+      </ScreenContainer>
+    );
+  }
 
   return (
     <ScreenContainer>
-    <View style={styles.container}>
-      <Text style={styles.header}>Search</Text>
-      <Text style={styles.desc}>Arama (demo). Week 3'te TMDB bağlanacak.</Text>
+      <View style={styles.container}>
+        <Text style={styles.header}>Search</Text>
+        <Text style={styles.desc}>Arama (demo). Week 3'te TMDB bağlanacak.</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Search movie or TV series..."
-        value={q}
-        onChangeText={setQ}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Search movie or TV series..."
+          value={q}
+          onChangeText={setQ}
+        />
 
-      <FlatList
-        data={DUMMY_RESULTS}
-        keyExtractor={(i) => i.id}
-        contentContainerStyle={{ gap: 10, paddingTop: 10 }}
-        renderItem={({ item }) => (
-          <View style={styles.resultCard}>
-            <View style={styles.posterPlaceholder} />
-            <Text style={styles.resultTitle}>{item.title}</Text>
-          </View>
-        )}
-      />
-    </View>
+        <FlatList
+          data={DUMMY_RESULTS}
+          keyExtractor={(i) => i.id}
+          contentContainerStyle={{ gap: 10, paddingTop: 10 }}
+          renderItem={({ item }) => (
+            <View style={styles.resultCard}>
+              <View style={styles.posterPlaceholder} />
+              <Text style={styles.resultTitle}>{item.title}</Text>
+            </View>
+          )}
+        />
+      </View>
     </ScreenContainer>
   );
 }
