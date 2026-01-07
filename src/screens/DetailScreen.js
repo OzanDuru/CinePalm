@@ -1,102 +1,146 @@
-// src/screens/DetailScreen.js
-import React, { useContext, useMemo } from "react";
-import { View, Text, Pressable, StyleSheet, Alert } from "react-native";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { View, ScrollView, StyleSheet } from "react-native";
 import ScreenContainer from "../components/ScreenContainer";
-
-import { AuthContext } from "../firebase/AuthContext";
-import { addFavorite, addWatchlist } from "../firebase/db";
+import LoadingState from "../components/LoadingState";
+import EmptyState from "../components/EmptyState";
+import Text from "../components/Text";
+import PosterImage from "../components/PosterImage";
+import RatingBadge from "../components/RatingBadge";
+import Button from "../components/Button";
+import theme from "../theme";
+import { getMovieDetails } from "../services/tmdb";
+import { buildPosterUrl } from "../constants/images";
 
 export default function DetailScreen({ route, navigation }) {
-  // AuthContext uzerinden kullanici bilgisine erisiyoruz.
-  const { user } = useContext(AuthContext);
-  // Home ekranindan gelen parametreler (id + title).
-  const { id, title } = route.params || {};
+  const movieId = route?.params?.id;
+  const [movie, setMovie] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Detay ekraninda kaydetmek icin tek bir "item" objesi olusturulur.
-  // useMemo: ayni id/title gelirse her render'da yeniden hesaplamaz.
-  const item = useMemo(() => {
-    return {
-      id: String(id ?? ""),
-      title: title ?? "Untitled",
-      posterUrl: "",
-      rating: 0,
-      type: "demo", // Week 3'te movie/tv olacak
-    };
-  }, [id, title]);
+  const genresText = useMemo(() => {
+    if (!movie?.genres?.length) return "No genres listed.";
+    return movie.genres.map((genre) => genre.name).join(" • ");
+  }, [movie]);
 
-  async function handleAddFavorite() {
-    if (!user) return Alert.alert("Login gerekli", "Favori eklemek için giriş yap.");
-    try {
-      await addFavorite(user.uid, item);
-      Alert.alert("OK", "Favorilere eklendi.");
-    } catch (e) {
-      console.log("ADD_FAV_ERROR:", e);
-      Alert.alert("Hata", "Favori eklenemedi.");
+  const loadDetails = useCallback(async () => {
+    if (!movieId) {
+      setError("Missing movie id.");
+      setLoading(false);
+      return;
     }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getMovieDetails(movieId);
+      setMovie(data);
+    } catch (err) {
+      setError(err?.message || "Failed to load movie details.");
+    } finally {
+      setLoading(false);
+    }
+  }, [movieId]);
+
+  useEffect(() => {
+    loadDetails();
+  }, [loadDetails]);
+
+  if (loading) {
+    return (
+      <ScreenContainer>
+        <LoadingState title="Loading details..." subtitle="Fetching movie information" />
+      </ScreenContainer>
+    );
   }
 
-  async function handleAddWatchlist() {
-    if (!user) return Alert.alert("Login gerekli", "Watchlist eklemek için giriş yap.");
-    try {
-      await addWatchlist(user.uid, item);
-      Alert.alert("OK", "Watchlist’e eklendi.");
-    } catch (e) {
-      console.log("ADD_WL_ERROR:", e);
-      Alert.alert("Hata", "Watchlist eklenemedi.");
-    }
+  if (error) {
+    return (
+      <ScreenContainer>
+        <EmptyState
+          title="Unable to load"
+          subtitle={error}
+          actionLabel="Retry"
+          onAction={loadDetails}
+        />
+      </ScreenContainer>
+    );
+  }
+
+  if (!movie) {
+    return (
+      <ScreenContainer>
+        <EmptyState title="Movie not found" subtitle="Try another title." />
+      </ScreenContainer>
+    );
   }
 
   return (
     <ScreenContainer>
-      <View style={styles.container}>
-        <Text style={styles.header}>Detail</Text>
-        <Text style={styles.desc}>Week 2: Firestore ekleme</Text>
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+        <PosterImage
+          uri={buildPosterUrl(movie.poster_path)}
+          height={360}
+          width={260}
+          style={styles.poster}
+        />
 
-        {/* Poster alani (demo) */}
-        <View style={styles.posterPlaceholder} />
-
-        <Text style={styles.title}>{title}</Text>
-
-        {/* Metadata satiri: item id + user email */}
-        <View style={styles.metaRow}>
-          <Text style={styles.meta}>🆔 {id}</Text>
-          <Text style={styles.meta}>👤 {user?.email ?? "Guest"}</Text>
+        <View style={styles.headerRow}>
+          <Text variant="title" style={styles.title}>
+            {movie.title}
+          </Text>
+          <RatingBadge value={movie.vote_average} />
         </View>
 
-        <Text style={styles.overview}>
-          Şimdilik demo veri. Week 3'te TMDB’den gerçek içerik gelecek.
+        <Text variant="caption" style={styles.meta}>
+          {movie.release_date || "Release date unknown"}
+        </Text>
+        <Text variant="caption" style={styles.meta}>
+          {genresText}
         </Text>
 
-        <View style={styles.actionsRow}>
-          <Pressable style={styles.secondaryBtn} onPress={handleAddFavorite}>
-            <Text style={styles.btnText}>Add Favorite</Text>
-          </Pressable>
+        <Text variant="subtitle" style={styles.sectionTitle}>
+          Overview
+        </Text>
+        <Text variant="body" style={styles.overview}>
+          {movie.overview || "No overview available for this movie."}
+        </Text>
 
-          <Pressable style={styles.secondaryBtn} onPress={handleAddWatchlist}>
-            <Text style={styles.btnText}>Add Watchlist</Text>
-          </Pressable>
+        <View style={styles.actions}>
+          <Button title="Back" variant="secondary" onPress={() => navigation.goBack()} />
         </View>
-
-        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>← Back</Text>
-        </Pressable>
-      </View>
+      </ScrollView>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff", gap: 10 },
-  header: { fontSize: 28, fontWeight: "700" },
-  desc: { fontSize: 14, color: "#555" },
-  posterPlaceholder: { height: 220, borderRadius: 16, backgroundColor: "#f1f5f9" },
-  title: { fontSize: 20, fontWeight: "800", marginTop: 6 },
-  metaRow: { flexDirection: "row", gap: 14, flexWrap: "wrap" },
-  meta: { color: "#444", fontWeight: "600" },
-  overview: { color: "#444", lineHeight: 20, marginTop: 6 },
-  actionsRow: { flexDirection: "row", gap: 12, marginTop: 10 },
-  secondaryBtn: { flex: 1, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: "#ddd", alignItems: "center" },
-  btnText: { fontWeight: "700" },
-  backBtn: { marginTop: 10 },
-  backText: { fontWeight: "700" },
+  container: {
+    padding: theme.spacing.lg,
+    gap: theme.spacing.md,
+  },
+  poster: {
+    alignSelf: "center",
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: theme.spacing.md,
+  },
+  title: {
+    flex: 1,
+  },
+  meta: {
+    color: theme.colors.textSecondary,
+  },
+  sectionTitle: {
+    marginTop: theme.spacing.md,
+  },
+  overview: {
+    color: theme.colors.textSecondary,
+    lineHeight: 22,
+  },
+  actions: {
+    marginTop: theme.spacing.lg,
+  },
 });
