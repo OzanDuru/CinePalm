@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
+import theme from "../theme";
 
 // EmptyState:
 // Veri olmayan durumlarda kullanilan standart bos ekran.
@@ -32,17 +33,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 24,
     gap: 10,
-    backgroundColor: "#fff",
+    backgroundColor: theme.colors.background,
   },
-  title: { fontSize: 18, fontWeight: "800" },
-  sub: { color: "#666", textAlign: "center", lineHeight: 20 },
+  title: { fontSize: 18, fontWeight: "800", color: theme.colors.textPrimary },
+  sub: { color: theme.colors.textSecondary, textAlign: "center", lineHeight: 20 },
   btn: {
     marginTop: 8,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: theme.colors.border,
   },
-  btnText: { fontWeight: "800" },
+  btnText: { fontWeight: "800", color: theme.colors.textPrimary },
 });

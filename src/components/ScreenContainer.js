@@ -1,6 +1,7 @@
 import React from "react";
 import { StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import theme from "../theme";
 
 // ScreenContainer:
 // Tum ekranlar icin ortak bir "root container" saglar.
@@ -17,6 +18,6 @@ export default function ScreenContainer({ children, style, edges = ["top", "bott
 const styles = StyleSheet.create({
   base: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: theme.colors.background,
   },
 });
