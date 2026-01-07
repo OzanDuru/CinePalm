@@ -1,7 +1,11 @@
 // src/screens/ResetPasswordScreen.js
 import React, { useState } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { View, TextInput, StyleSheet, Alert } from "react-native";
 import ScreenContainer from "../components/ScreenContainer";
+import Text from "../components/Text";
+import Button from "../components/Button";
+import Card from "../components/Card";
+import theme from "../theme";
 
 import { sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "../firebase/firebase";
@@ -36,36 +40,39 @@ export default function ResetPasswordScreen({ navigation }) {
   return (
     <ScreenContainer>
       <View style={styles.container}>
-        <Text style={styles.header}>Reset Password</Text>
-        <Text style={styles.desc}>Email adresine sıfırlama linki gönderir.</Text>
+        <Text variant="title">Reset Password</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
+        <Card style={styles.card}>
+          <Text variant="caption" style={styles.label}>Email</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor={theme.colors.textMuted}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
+        </Card>
 
-        <Pressable style={styles.primaryBtn} onPress={handleReset} disabled={loading}>
-          {loading ? <ActivityIndicator /> : <Text style={styles.primaryText}>Send reset email</Text>}
-        </Pressable>
+        <Button title={loading ? "Loading..." : "Send reset email"} onPress={handleReset} disabled={loading} />
 
-        <Pressable onPress={() => navigation.navigate("Login")}>
-          <Text style={styles.link}>← Back to Login</Text>
-        </Pressable>
+        <Button title="Back to Login" variant="ghost" onPress={() => navigation.navigate("Login")} />
       </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff", gap: 12 },
-  header: { fontSize: 28, fontWeight: "800" },
-  desc: { fontSize: 14, color: "#555", marginBottom: 6 },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 12, padding: 12 },
-  primaryBtn: { backgroundColor: "#111", padding: 14, borderRadius: 12, alignItems: "center" },
-  primaryText: { color: "#fff", fontWeight: "800" },
-  link: { color: "#111", fontWeight: "800", marginTop: 4 },
+  container: { flex: 1, padding: theme.spacing.lg, gap: theme.spacing.lg },
+  card: { gap: theme.spacing.sm },
+  label: { color: theme.colors.textSecondary },
+  input: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.sm,
+    color: theme.colors.textPrimary,
+    backgroundColor: theme.colors.surface,
+  },
 });

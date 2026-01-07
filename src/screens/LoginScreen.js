@@ -1,7 +1,11 @@
 // src/screens/LoginScreen.js
 import React, { useState } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { View, TextInput, StyleSheet, Alert } from "react-native";
 import ScreenContainer from "../components/ScreenContainer";
+import Text from "../components/Text";
+import Button from "../components/Button";
+import Card from "../components/Card";
+import theme from "../theme";
 
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase/firebase";
@@ -45,38 +49,36 @@ export default function LoginScreen({ navigation }) {
   return (
     <ScreenContainer>
       <View style={styles.container}>
-        <Text style={styles.header}>Login</Text>
-        <Text style={styles.desc}>Firebase Auth (Week 2)</Text>
+        <Text variant="title">Login</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
+        <Card style={styles.card}>
+          <Text variant="caption" style={styles.label}>Email</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor={theme.colors.textMuted}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={pass}
-          onChangeText={setPass}
-          secureTextEntry
-        />
+          <Text variant="caption" style={styles.label}>Password</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            placeholderTextColor={theme.colors.textMuted}
+            value={pass}
+            onChangeText={setPass}
+            secureTextEntry
+          />
+        </Card>
 
-        <Pressable style={styles.primaryBtn} onPress={handleLogin} disabled={loading}>
-          {loading ? <ActivityIndicator /> : <Text style={styles.primaryText}>Login</Text>}
-        </Pressable>
+        <Button title={loading ? "Loading..." : "Login"} onPress={handleLogin} disabled={loading} />
 
         <View style={styles.linksRow}>
-          <Pressable onPress={() => navigation.navigate("Register")}>
-            <Text style={styles.link}>Create account</Text>
-          </Pressable>
-
-          <Pressable onPress={() => navigation.navigate("ResetPassword")}>
-            <Text style={styles.link}>Forgot password?</Text>
-          </Pressable>
+          <Button title="Create account" variant="ghost" onPress={() => navigation.navigate("Register")} />
+          <Button title="Forgot password?" variant="ghost" onPress={() => navigation.navigate("ResetPassword")} />
         </View>
       </View>
     </ScreenContainer>
@@ -84,12 +86,16 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff", gap: 12 },
-  header: { fontSize: 28, fontWeight: "800" },
-  desc: { fontSize: 14, color: "#555", marginBottom: 6 },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 12, padding: 12 },
-  primaryBtn: { backgroundColor: "#111", padding: 14, borderRadius: 12, alignItems: "center" },
-  primaryText: { color: "#fff", fontWeight: "800" },
-  linksRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 6 },
-  link: { color: "#111", fontWeight: "700" },
+  container: { flex: 1, padding: theme.spacing.lg, gap: theme.spacing.lg },
+  card: { gap: theme.spacing.sm },
+  label: { color: theme.colors.textSecondary },
+  input: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.sm,
+    color: theme.colors.textPrimary,
+    backgroundColor: theme.colors.surface,
+  },
+  linksRow: { flexDirection: "row", justifyContent: "space-between" },
 });

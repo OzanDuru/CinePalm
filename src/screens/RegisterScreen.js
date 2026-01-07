@@ -1,7 +1,11 @@
 // src/screens/RegisterScreen.js
 import React, { useState } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { View, TextInput, StyleSheet, Alert } from "react-native";
 import ScreenContainer from "../components/ScreenContainer";
+import Text from "../components/Text";
+import Button from "../components/Button";
+import Card from "../components/Card";
+import theme from "../theme";
 
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase/firebase";
@@ -40,52 +44,59 @@ export default function RegisterScreen({ navigation }) {
   return (
     <ScreenContainer>
       <View style={styles.container}>
-        <Text style={styles.header}>Register</Text>
-        <Text style={styles.desc}>Firebase Auth (Week 2)</Text>
+        <Text variant="title">Register</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
+        <Card style={styles.card}>
+          <Text variant="caption" style={styles.label}>Email</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor={theme.colors.textMuted}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Password (min 6)"
-          value={pass}
-          onChangeText={setPass}
-          secureTextEntry
-        />
+          <Text variant="caption" style={styles.label}>Password</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Password (min 6)"
+            placeholderTextColor={theme.colors.textMuted}
+            value={pass}
+            onChangeText={setPass}
+            secureTextEntry
+          />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Password again"
-          value={pass2}
-          onChangeText={setPass2}
-          secureTextEntry
-        />
+          <Text variant="caption" style={styles.label}>Password again</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Password again"
+            placeholderTextColor={theme.colors.textMuted}
+            value={pass2}
+            onChangeText={setPass2}
+            secureTextEntry
+          />
+        </Card>
 
-        <Pressable style={styles.primaryBtn} onPress={handleRegister} disabled={loading}>
-          {loading ? <ActivityIndicator /> : <Text style={styles.primaryText}>Create account</Text>}
-        </Pressable>
+        <Button title={loading ? "Loading..." : "Create account"} onPress={handleRegister} disabled={loading} />
 
-        <Pressable onPress={() => navigation.navigate("Login")}>
-          <Text style={styles.link}>← Back to Login</Text>
-        </Pressable>
+        <Button title="Back to Login" variant="ghost" onPress={() => navigation.navigate("Login")} />
       </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff", gap: 12 },
-  header: { fontSize: 28, fontWeight: "800" },
-  desc: { fontSize: 14, color: "#555", marginBottom: 6 },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 12, padding: 12 },
-  primaryBtn: { backgroundColor: "#111", padding: 14, borderRadius: 12, alignItems: "center" },
-  primaryText: { color: "#fff", fontWeight: "800" },
-  link: { color: "#111", fontWeight: "800", marginTop: 4 },
+  container: { flex: 1, padding: theme.spacing.lg, gap: theme.spacing.lg },
+  card: { gap: theme.spacing.sm },
+  label: { color: theme.colors.textSecondary },
+  input: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.sm,
+    color: theme.colors.textPrimary,
+    backgroundColor: theme.colors.surface,
+  },
 });
