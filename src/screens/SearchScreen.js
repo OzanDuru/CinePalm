@@ -1,70 +1,168 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, FlatList, StyleSheet } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { View, FlatList, Pressable, StyleSheet } from "react-native";
 import ScreenContainer from "../components/ScreenContainer";
 import LoadingState from "../components/LoadingState";
+import EmptyState from "../components/EmptyState";
+import Text from "../components/Text";
+import Card from "../components/Card";
+import PosterImage from "../components/PosterImage";
+import RatingBadge from "../components/RatingBadge";
+import SearchInput from "../components/SearchInput";
+import theme from "../theme";
+import { searchMovies } from "../services/tmdb";
+import { buildPosterUrl } from "../constants/images";
 
-// Demo arama sonuclari
-const DUMMY_RESULTS = [
-  { id: "1", title: "Avatar" },
-  { id: "2", title: "Avengers" },
-  { id: "3", title: "Arrival" },
-];
+function SearchResultItem({ item, onPress }) {
+  return (
+    <Pressable onPress={() => onPress(item)}>
+      <Card style={styles.card}>
+        <PosterImage uri={buildPosterUrl(item.poster_path)} width={80} height={120} />
+        <View style={styles.cardContent}>
+          <Text variant="subtitle" numberOfLines={2}>
+            {item.title}
+          </Text>
+          <Text variant="caption" numberOfLines={2} style={styles.overview}>
+            {item.overview || "No overview available."}
+          </Text>
+          <RatingBadge value={item.vote_average} />
+        </View>
+      </Card>
+    </Pressable>
+  );
+}
 
-export default function SearchScreen() {
-  // Arama input degeri
-  const [q, setQ] = useState("");
-  // Baslangicta demo yukleme gosteriyoruz
-  const [loading, setLoading] = useState(true);
+export default function SearchScreen({ navigation }) {
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Demo loading (2 sn) - gercek API baglandiginda bu kisim fetch olur.
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 2000);
-    return () => clearTimeout(t);
-  }, []);
+    const timer = setTimeout(() => setDebouncedQuery(query.trim()), 400);
+    return () => clearTimeout(timer);
+  }, [query]);
 
-  if (loading) {
+  useEffect(() => {
+    let active = true;
+
+    async function runSearch() {
+      if (!debouncedQuery) {
+        setResults([]);
+        setError(null);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await searchMovies(debouncedQuery, 1);
+        if (active) setResults(data?.results ?? []);
+      } catch (err) {
+        if (active) setError(err?.message || "Search failed.");
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    runSearch();
+    return () => {
+      active = false;
+    };
+  }, [debouncedQuery]);
+
+  const listHeader = useMemo(() => {
+    return (
+      <View style={styles.header}>
+        <Text variant="title">Search</Text>
+        <Text variant="caption">Find your next movie</Text>
+        <SearchInput
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search movies..."
+          autoCapitalize="none"
+        />
+      </View>
+    );
+  }, [query]);
+
+  const handleSelect = (item) => navigation.navigate("Detail", { id: item.id, title: item.title });
+
+  if (loading && results.length === 0) {
     return (
       <ScreenContainer>
-        <LoadingState title="Searching..." subtitle="Fetching demo results" />
+        <LoadingState title="Searching..." subtitle="Looking up movies" />
+      </ScreenContainer>
+    );
+  }
+
+  if (error) {
+    return (
+      <ScreenContainer>
+        <EmptyState title="Search failed" subtitle={error} />
+      </ScreenContainer>
+    );
+  }
+
+  if (!debouncedQuery) {
+    return (
+      <ScreenContainer>
+        <View style={styles.container}>
+          {listHeader}
+          <EmptyState title="Start typing" subtitle="Search for movies by title." />
+        </View>
+      </ScreenContainer>
+    );
+  }
+
+  if (!loading && results.length === 0) {
+    return (
+      <ScreenContainer>
+        <View style={styles.container}>
+          {listHeader}
+          <EmptyState title="No results" subtitle="Try a different search term." />
+        </View>
       </ScreenContainer>
     );
   }
 
   return (
     <ScreenContainer>
-      <View style={styles.container}>
-        <Text style={styles.header}>Search</Text>
-        <Text style={styles.desc}>Arama (demo). Week 3'te TMDB bağlanacak.</Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Search movie or TV series..."
-          value={q}
-          onChangeText={setQ}
-        />
-
-        <FlatList
-          data={DUMMY_RESULTS}
-          keyExtractor={(i) => i.id}
-          contentContainerStyle={{ gap: 10, paddingTop: 10 }}
-          renderItem={({ item }) => (
-            <View style={styles.resultCard}>
-              <View style={styles.posterPlaceholder} />
-              <Text style={styles.resultTitle}>{item.title}</Text>
-            </View>
-          )}
-        />
-      </View>
+      <FlatList
+        data={results}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={({ item }) => <SearchResultItem item={item} onPress={handleSelect} />}
+        contentContainerStyle={styles.list}
+        ListHeaderComponent={listHeader}
+        showsVerticalScrollIndicator={false}
+      />
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff", gap: 10 },
-  header: { fontSize: 28, fontWeight: "700" },
-  desc: { fontSize: 14, color: "#555" },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12 },
-  resultCard: { borderWidth: 1, borderColor: "#eee", borderRadius: 14, padding: 12, gap: 10 },
-  posterPlaceholder: { height: 120, borderRadius: 12, backgroundColor: "#f1f5f9" },
-  resultTitle: { fontSize: 16, fontWeight: "700" },
+  container: {
+    flex: 1,
+    padding: theme.spacing.lg,
+    gap: theme.spacing.lg,
+  },
+  header: {
+    gap: theme.spacing.sm,
+  },
+  list: {
+    padding: theme.spacing.lg,
+    gap: theme.spacing.lg,
+  },
+  card: {
+    flexDirection: "row",
+    gap: theme.spacing.md,
+  },
+  cardContent: {
+    flex: 1,
+    gap: theme.spacing.xs,
+  },
+  overview: {
+    color: theme.colors.textSecondary,
+  },
 });
