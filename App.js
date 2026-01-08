@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Image } from "react-native";
 import { useFonts } from "expo-font";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -42,7 +43,18 @@ function HomeStack() {
         headerTitleStyle: { fontWeight: "700" },
       }}
     >
-      <HomeStackNav.Screen name="Home" component={HomeScreen} options={{ title: "CinePalm" }} />
+      <HomeStackNav.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{
+          headerTitle: () => (
+            <Image
+              source={require("./assets/cinepalm-logo.jpg")}
+              style={{ width: 140, height: 34, resizeMode: "contain" }}
+            />
+          ),
+        }}
+      />
     </HomeStackNav.Navigator>
   );
 }
