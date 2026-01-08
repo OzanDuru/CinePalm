@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { View, FlatList, Pressable, StyleSheet } from "react-native";
+import { View, FlatList, Pressable, StyleSheet, Image } from "react-native";
 import ScreenContainer from "../components/ScreenContainer";
 import LoadingState from "../components/LoadingState";
 import EmptyState from "../components/EmptyState";
@@ -111,6 +111,7 @@ export default function HomeScreen({ navigation }) {
     return (
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
+          <Image source={require("../../assets/cinepalm-logo.jpg")} style={styles.logo} />
           <Text variant="title">Trending Today</Text>
           <Text variant="caption">Top picks from TMDB</Text>
         </View>
@@ -200,6 +201,11 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     gap: 4,
+  },
+  logo: {
+    width: 200,
+    height: 72,
+    resizeMode: "contain",
   },
   horizontalList: {
     gap: theme.spacing.md,

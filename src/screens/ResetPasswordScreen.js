@@ -1,6 +1,6 @@
 // src/screens/ResetPasswordScreen.js
 import React, { useState } from "react";
-import { View, TextInput, StyleSheet, Alert } from "react-native";
+import { View, TextInput, StyleSheet, Alert, Image } from "react-native";
 import ScreenContainer from "../components/ScreenContainer";
 import Text from "../components/Text";
 import Button from "../components/Button";
@@ -41,10 +41,7 @@ export default function ResetPasswordScreen({ navigation }) {
     <ScreenContainer>
       <View style={styles.container}>
         <View style={styles.hero}>
-          <View style={styles.brandRow}>
-            <View style={styles.brandDot} />
-            <Text variant="title">CinePalm</Text>
-          </View>
+          <Image source={require("../../assets/cinepalm-logo.jpg")} style={styles.logo} />
           <Text variant="caption" style={styles.heroSubtitle}>
             Recover access to your account
           </Text>
@@ -82,16 +79,10 @@ const styles = StyleSheet.create({
   hero: {
     gap: theme.spacing.xs,
   },
-  brandRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing.sm,
-  },
-  brandDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: theme.colors.accent,
+  logo: {
+    width: 220,
+    height: 80,
+    resizeMode: "contain",
   },
   heroSubtitle: {
     color: theme.colors.textSecondary,
