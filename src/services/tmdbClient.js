@@ -1,6 +1,6 @@
 import { ENV, validateEnv } from "../config/env";
 
-function normalizeBaseUrl(url) {
+function normalizeBaseUrl(url) { 
   if (!url) return "";
   return url.endsWith("/") ? url.slice(0, -1) : url;
 }
@@ -19,13 +19,15 @@ export async function request(path, { method = "GET", params, body } = {}) {
   const baseUrl = normalizeBaseUrl(ENV.apiBaseUrl);
   const url = new URL(`${baseUrl}${path}`);
 
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== "") {
+  if (params) { // Query parametrelerini ekle -> "https://api.themoviedb.org/3/search/movie?query=batman&page=1&language=tr-TR"
+
+    for (const [key, value] of Object.entries(params)) {
+      if (value != null && value !== "") {
         url.searchParams.append(key, String(value));
       }
-    });
+    }
   }
+
 
   const response = await fetch(url.toString(), {
     method,

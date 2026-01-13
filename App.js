@@ -1,17 +1,19 @@
-import React, { useEffect, useState } from "react";
-import { Image } from "react-native";
-import { useFonts } from "expo-font";
-import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";// Temel React ve React Native kutuphaneleri
+import { Image } from "react-native";// Resim gosterimi icin
+import { useFonts } from "expo-font";// Font yukleme
+import { Ionicons } from "@expo/vector-icons";// Icon kutuphanesi
 
-import { NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { NavigationContainer } from "@react-navigation/native";// Navigation konteyneri
+import { createNativeStackNavigator } from "@react-navigation/native-stack";// Stack navigator
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";// Tab navigator
 
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "./src/firebase/firebase";
+import { onAuthStateChanged } from "firebase/auth";// Firebase auth state dinleme login logout kontrolu
+import { auth } from "./src/firebase/firebase";// Firebase auth instance
 
-import { AuthProvider } from "./src/firebase/AuthContext";
-import theme from "./src/theme";
+import { AuthProvider } from "./src/firebase/AuthContext";//Auth bilgilerini tüm uygulamaya yaymak icin provider
+import theme from "./src/theme";// Tema ve stil ayarlari
+
+// Ekranlar
 
 import DetailScreen from "./src/screens/DetailScreen";
 import HomeScreen from "./src/screens/HomeScreen";
@@ -38,9 +40,8 @@ function HomeStack() {
   return (
     <HomeStackNav.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: theme.colors.background },
-        headerTintColor: theme.colors.textPrimary,
-        headerTitleStyle: { fontWeight: "700" },
+        headerStyle: { backgroundColor: theme.colors.headercolor },// Header arka plan rengi
+        //headerTintColor: theme.colors.headerbackbuttoncolor,// Header metin rengi  bizde logo var
       }}
     >
       <HomeStackNav.Screen
@@ -67,10 +68,7 @@ function Tabs() {
       screenOptions={({ route }) => ({
         // Tab'larda her ekrana ozel header yerine custom tasarim icin header kapali.
         headerShown: false,
-        headerStyle: { backgroundColor: theme.colors.background },
-        headerTintColor: theme.colors.textPrimary,
-        headerTitleStyle: { fontWeight: "700" },
-        tabBarActiveTintColor: theme.colors.accent,
+        tabBarActiveTintColor: theme.colors.tabiconscolor,
         tabBarInactiveTintColor: theme.colors.textMuted,
         tabBarStyle: {
           backgroundColor: theme.colors.background,
@@ -91,7 +89,7 @@ function Tabs() {
       <Tab.Screen name="HomeTab" component={HomeStack} options={{ title: "Home" }} />
       <Tab.Screen name="Search" component={SearchScreen} />
       <Tab.Screen name="Favorites" component={FavoritesScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ headerShown: true }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
     </Tab.Navigator>
   );
 }
@@ -104,11 +102,17 @@ function AuthStack() {
         headerStyle: { backgroundColor: theme.colors.background },
         headerTintColor: theme.colors.textPrimary,
         headerTitleStyle: { fontWeight: "700" },
+        headerTitle: () => (
+          <Image
+            source={require("./assets/cinepalm-logo.jpg")}
+            style={{ width: 140, height: 34, resizeMode: "contain" }}
+          />
+        ),
       }}
     >
-      <RootStack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-      <RootStack.Screen name="Register" component={RegisterScreen} options={{ title: "Register" }} />
-      <RootStack.Screen name="ResetPassword" component={ResetPasswordScreen} options={{ title: "Reset Password" }} />
+      <RootStack.Screen name="Login" component={LoginScreen} />
+      <RootStack.Screen name="Register" component={RegisterScreen} />
+      <RootStack.Screen name="ResetPassword" component={ResetPasswordScreen} />
     </RootStack.Navigator>
   );
 }
@@ -123,8 +127,8 @@ function AppStack() {
         headerTitleStyle: { fontWeight: "700" },
       }}
     >
-      <AppStackNav.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
-      <AppStackNav.Screen name="Detail" component={DetailScreen} options={{ title: "Detail" }} />
+      <AppStackNav.Screen name="Tabs" component={Tabs} options={{ headerShown: false, }} />
+      <AppStackNav.Screen name="Detail" component={DetailScreen} options={{ title: "Detail",headerBackTitle: "Back" }} />
     </AppStackNav.Navigator>
   );
 }
@@ -139,8 +143,8 @@ export default function App() {
     // Firebase auth state degisince (login/logout) user state guncellenir.
     // Bu state, Tabs veya AuthStack secimini belirler.
     const unsub = onAuthStateChanged(auth, (u) => setUser(u ?? null));
-    return unsub;
-  }, []);
+    return unsub; //When this component is removed, stop listening to Firebase auth changes.
+  }, []);//Runs only once when the component first appears (mount)
 
   // Fontlar veya auth durumu hazir degilse hic bir sey render etmiyoruz.
   if (!fontsLoaded) return null;
@@ -151,8 +155,7 @@ export default function App() {
   return (
     <AuthProvider>
       <NavigationContainer>
-        {/* Auth gate: kullaniciya gore navigator secimi */}
-        {user ? <AppStack /> : <AuthStack />}
+        {user ? <AppStack /> : <AuthStack />} 
       </NavigationContainer>
     </AuthProvider>
   );

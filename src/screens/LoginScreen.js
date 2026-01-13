@@ -7,6 +7,7 @@ import Button from "../components/Button";
 import Card from "../components/Card";
 import theme from "../theme";
 
+
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 
@@ -50,11 +51,11 @@ export default function LoginScreen({ navigation }) {
     <ScreenContainer>
       <View style={styles.container}>
         <View style={styles.hero}>
-          <Image source={require("../../assets/cinepalm-logo.jpg")} style={styles.logo} />
+          <Text variant="title">Login</Text>
           <Text variant="caption" style={styles.heroSubtitle}>
-            Sign in to your premium list
+            Sign in to your CinePalm account and continue your movie journey! 
           </Text>
-          <Text variant="subtitle">Login</Text>
+          
         </View>
 
         <Card style={styles.card}>

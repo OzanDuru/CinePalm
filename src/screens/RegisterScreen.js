@@ -45,11 +45,11 @@ export default function RegisterScreen({ navigation }) {
     <ScreenContainer>
       <View style={styles.container}>
         <View style={styles.hero}>
-          <Image source={require("../../assets/cinepalm-logo.jpg")} style={styles.logo} />
+          <Text variant="title">Register</Text>
           <Text variant="caption" style={styles.heroSubtitle}>
-            Create your premium profile
+            Create your CinePalm profile and start exploring movies!
           </Text>
-          <Text variant="subtitle">Register</Text>
+          
         </View>
 
         <Card style={styles.card}>
@@ -87,12 +87,7 @@ export default function RegisterScreen({ navigation }) {
 
         <Button title={loading ? "Loading..." : "Create account"} onPress={handleRegister} disabled={loading} />
 
-        <Button
-          title="Back to Login"
-          variant="ghost"
-          onPress={() => navigation.navigate("Login")}
-          style={styles.linkButton}
-        />
+       
       </View>
     </ScreenContainer>
   );

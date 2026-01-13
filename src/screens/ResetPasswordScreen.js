@@ -41,11 +41,11 @@ export default function ResetPasswordScreen({ navigation }) {
     <ScreenContainer>
       <View style={styles.container}>
         <View style={styles.hero}>
-          <Image source={require("../../assets/cinepalm-logo.jpg")} style={styles.logo} />
+          <Text variant="title">Reset Password</Text>
           <Text variant="caption" style={styles.heroSubtitle}>
-            Recover access to your account
+            Recover access to your account and continue exploring movies!
           </Text>
-          <Text variant="subtitle">Reset Password</Text>
+          
         </View>
 
         <Card style={styles.card}>
@@ -63,12 +63,7 @@ export default function ResetPasswordScreen({ navigation }) {
 
         <Button title={loading ? "Loading..." : "Send reset email"} onPress={handleReset} disabled={loading} />
 
-        <Button
-          title="Back to Login"
-          variant="ghost"
-          onPress={() => navigation.navigate("Login")}
-          style={styles.linkButton}
-        />
+        
       </View>
     </ScreenContainer>
   );

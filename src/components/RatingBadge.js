@@ -13,7 +13,7 @@ function formatRating(value) {
 export default function RatingBadge({ value, style }) {
   return (
     <View style={[styles.badge, style]}>
-      <Text style={styles.label}>IMDB</Text>
+      <Text style={styles.label}>TMDB</Text>
       <Text style={styles.value}>{formatRating(value)}</Text>
     </View>
   );
