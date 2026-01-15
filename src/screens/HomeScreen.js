@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
     // Dış padding.
     padding: theme.spacing.lg,
     // Alt tarafta ekstra boşluk (tab bar üstünde sıkışmasın).
-    paddingBottom: theme.spacing.xl,
+    paddingBottom: theme.spacing.xxl,
     // Kartlar arası boşluk.
     gap: theme.spacing.lg,
   },
@@ -387,15 +387,15 @@ const styles = StyleSheet.create({
     gap: 5,
   },
 
-  // Logo stili (AMA bu dosyada kullanılmıyor; muhtemelen navigator header’da kullanılıyor).
-  logo: {
-    // Logo genişliği.
-    width: 200,
-    // Logo yüksekliği.
-    height: 72,
-    // Görseli orantılı sığdır.
-    resizeMode: "contain",
-  },
+  // // Logo stili (AMA bu dosyada kullanılmıyor; muhtemelen navigator header’da kullanılıyor).
+  // logo: {
+  //   // Logo genişliği.
+  //   width: 200,
+  //   // Logo yüksekliği.
+  //   height: 72,
+  //   // Görseli orantılı sığdır.
+  //   resizeMode: "contain",
+  // },
 
   // Trending yatay listenin içerik stili: kartlar arası boşluk + üst-alt padding.
   horizontalList: {
