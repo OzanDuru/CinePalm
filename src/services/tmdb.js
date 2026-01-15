@@ -26,3 +26,16 @@ export function getMovieDetails(id) {
 export function getGenres() {
   return request("/genre/movie/list");
 }
+
+export function getMovieCredits(id) {
+  return request(`/movie/${id}/credits`);
+}
+
+export function getMovieImages(id) {
+  return request(`/movie/${id}/images`);
+}
+
+export function getMovieVideos(id) {
+  return request(`/movie/${id}/videos`);
+} 
+
