@@ -4,7 +4,10 @@
 // Favoriler bu örnekte AUTH'a (Firebase user) bağlı değil -> cihazın local storage'ında tutulur.
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
+import { Dimensions, Image, Linking, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { getMovieVideos } from "../services/tmdb";
+
 
 // Uygulama genelinde "güvenli alan" (notch/status bar) + arkaplan rengi vb. standart layout
 import ScreenContainer from "../components/ScreenContainer";
@@ -36,7 +39,6 @@ import { getMovieDetails,getMovieCredits, getMovieImages  } from "../services/tm
 // Poster path'i ("/abc.jpg") gerçek URL'ye çeviren yardımcı (TMDB image base URL + size)
 import { buildPosterUrl, buildCastPhotoUrl, buildBackdropUrl } from "../constants/images";
 
-import { Modal, Dimensions, Image, Pressable } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -50,6 +52,20 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 // BU EKRANDA AUTH ENTEGRASYONU YOK: yani kullanıcı login olsa bile favoriler "kullanıcıya göre" değil,
 // "bu cihazda" saklanır. Auth'a bağlamak istiyorsan bunu Firestore gibi bir yere userId ile yazman gerekir.
 import { isFavorite as checkFavorite, toggleFavorite } from "../utils/favoritesStorage";
+
+function pickBestTrailerKey(videos) {
+  const list = videos?.results ?? [];
+  const youtube = list.filter((v) => v.site === "YouTube" && v.key);
+
+  const best =
+    youtube.find((v) => v.type === "Trailer" && v.official) ||
+    youtube.find((v) => v.type === "Trailer") ||
+    youtube.find((v) => v.type === "Teaser") ||
+    youtube[0];
+
+  return best?.key ?? null;
+}
+
 
 export default function DetailScreen({ route, navigation }) {
   // -----------------------------
@@ -66,6 +82,11 @@ export default function DetailScreen({ route, navigation }) {
   // movie: TMDB'den dönen detay objesi (title, genres, overview, poster_path, vote_average, release_date vs.)
   const [movie, setMovie] = useState(null);
   const insets = useSafeAreaInsets();
+  const [trailerKey, setTrailerKey] = useState(null);
+  const watchUrl = useMemo(() => {
+    if (!trailerKey) return null;
+    return `https://www.youtube.com/watch?v=${trailerKey}`;
+  }, [trailerKey]);
 
 
   // loading: detay API çekilirken "LoadingState" göstermek için kontrol bayrağı
@@ -120,36 +141,41 @@ export default function DetailScreen({ route, navigation }) {
   // - useEffect([loadDetails]) içinde kullanıyoruz. loadDetails her render'da değişmesin ki
   //   useEffect gereksiz tetiklenmesin.
   const loadDetails = useCallback(async () => {
-    if (!movieId) {
-      setError("Missing movie id.");
-      setLoading(false);
-      return;
-    }
+  if (!movieId) {
+    setError("Missing movie id.");
+    setLoading(false);
+    return;
+  }
 
-    setLoading(true);
-    setError(null);
+  setLoading(true);
+  setError(null);
 
-    try {
-      const [details, credits, images] = await Promise.all([
-        getMovieDetails(movieId),
-        getMovieCredits(movieId),
-        getMovieImages(movieId),
-      ]);
+  try {
+    // ✅ Buraya videos'u da ekledik
+    const [details, credits, images, videos] = await Promise.all([
+      getMovieDetails(movieId),
+      getMovieCredits(movieId),
+      getMovieImages(movieId),
+      getMovieVideos(movieId), // ✅ trailer listesi burada geliyor
+    ]);
 
-      setMovie(details);
+    setMovie(details);
 
-      // credits.cast -> oyuncular
-      setCast(credits?.cast ?? []);
+    // credits.cast -> oyuncular
+    setCast(credits?.cast ?? []);
 
-      // images.backdrops -> film görselleri
-      // İlk 12 backdrop yeterli (UI şişmesin)
-      setBackdrops((images?.backdrops ?? []).slice(0, 12));
-    } catch (err) {
-      setError(err?.message || "Failed to load movie details.");
-    } finally {
-      setLoading(false);
-    }
-  }, [movieId]);
+    // images.backdrops -> film görselleri
+    setBackdrops((images?.backdrops ?? []).slice(0, 12));
+
+    // ✅ videos.results içinden en iyi YouTube trailer key seç
+    setTrailerKey(pickBestTrailerKey(videos));
+  } catch (err) {
+    setError(err?.message || "Failed to load movie details.");
+  } finally {
+    setLoading(false);
+  }
+}, [movieId]);
+
 
 
   // -----------------------------
@@ -281,13 +307,25 @@ export default function DetailScreen({ route, navigation }) {
         showsVerticalScrollIndicator={false}
       >
        
-        <PosterImage
-          
-          uri={buildPosterUrl(movie.poster_path)}
-          height={360}
-          width={260}
-          style={styles.poster}
-        />
+        <View style={styles.posterWrap}>
+          <PosterImage
+            uri={buildPosterUrl(movie.poster_path)}
+            height={360}
+            width={260}
+            style={styles.poster}
+          />
+          {watchUrl ? (
+            <Pressable
+              style={({ pressed }) => [
+                styles.trailerButton,
+                pressed && styles.trailerButtonPressed,
+              ]}
+              onPress={() => Linking.openURL(watchUrl)}
+            >
+              <Ionicons name="play" size={20} color={theme.colors.background} />
+            </Pressable>
+          ) : null}
+        </View>
 
         <View style={styles.headerRow}>
           <Text variant="title" style={styles.title} numberOfLines={2}>
@@ -432,6 +470,10 @@ const styles = StyleSheet.create({
     // posteri yatayda ortala
     alignSelf: "center",
   },
+  posterWrap: {
+    alignSelf: "center",
+    position: "relative",
+  },
       viewerRoot: {
       flex: 1,
       backgroundColor: theme.colors.background, // ✅ modal arka plan
@@ -472,6 +514,20 @@ const styles = StyleSheet.create({
   actions: {
     marginTop: theme.spacing.lg,
     gap: theme.spacing.sm,
+  },
+  trailerButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(245, 197, 24, 0.75)",
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    position: "absolute",
+    top: theme.spacing.sm,
+    left: theme.spacing.sm,
+  },
+  trailerButtonPressed: {
+    opacity: 0.8,
   },
 
   spacer: {

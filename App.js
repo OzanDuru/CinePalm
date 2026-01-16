@@ -56,6 +56,9 @@ function HomeStack() {
           ),
         }}
       />
+
+      
+
     </HomeStackNav.Navigator>
   );
 }
