@@ -23,6 +23,7 @@ import ProfileScreen from "./src/screens/ProfileScreen";
 import LoginScreen from "./src/screens/LoginScreen";
 import RegisterScreen from "./src/screens/RegisterScreen";
 import ResetPasswordScreen from "./src/screens/ResetPasswordScreen";
+import PersonScreen from "./src/screens/PersonScreen";
 
 
 // Uygulamadaki tum navigator yapilari:
@@ -132,6 +133,7 @@ function AppStack() {
     >
       <AppStackNav.Screen name="Tabs" component={Tabs} options={{ headerShown: false, }} />
       <AppStackNav.Screen name="Detail" component={DetailScreen} options={{ title: "Detail",headerBackTitle: "Back" }} />
+      <AppStackNav.Screen name="Person" component={PersonScreen} options={{ title: "Person", headerBackTitle: "Back" }} />
     </AppStackNav.Navigator>
   );
 }

@@ -424,7 +424,11 @@ export default function DetailScreen({ route, navigation }) {
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hList}>
           {cast.slice(0, 15).map((p) => (
-            <View key={String(p.id)} style={styles.castItem}>
+            <Pressable
+              key={String(p.id)}
+              style={styles.castItem}
+              onPress={() => navigation.navigate("Person", { personId: p.id, name: p.name })}
+            >
               <PosterImage
                 uri={buildCastPhotoUrl(p.profile_path)}   
                 width={80}
@@ -435,7 +439,7 @@ export default function DetailScreen({ route, navigation }) {
               <Text variant="caption" numberOfLines={1} style={styles.meta}>
                 {p.character || ""}
               </Text>
-            </View>
+            </Pressable>
           ))}
         </ScrollView>
 

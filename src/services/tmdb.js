@@ -39,3 +39,27 @@ export function getMovieVideos(id) {
   return request(`/movie/${id}/videos`);
 } 
 
+// --- People / Person endpoints ---
+export function getPersonDetails(personId) {
+  return request(`/person/${personId}`);
+}
+
+export function getPersonMovieCredits(personId) {
+  return request(`/person/${personId}/movie_credits`);
+}
+
+export function getPersonImages(personId) {
+  return request(`/person/${personId}/images`);
+}
+
+export function searchPeople(query, page = 1) {
+  if (!query) {
+    return Promise.resolve({ results: [], page: 1, total_pages: 0, total_results: 0 });
+  }
+  return request("/search/person", { params: { query, page, include_adult: false } });
+}
+
+// Optional: TV credits if needed later
+export function getPersonTvCredits(personId) {
+  return request(`/person/${personId}/tv_credits`);
+}
