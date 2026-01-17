@@ -3,8 +3,8 @@
 // TMDB API'den çekip gösterir. Ayrıca "Favorite" (favori) toggle işlemini yapar.
 // Favoriler bu örnekte AUTH'a (Firebase user) bağlı değil -> cihazın local storage'ında tutulur.
 
-import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Dimensions, Image, Linking, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { ActivityIndicator, Dimensions, Image, Linking, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { getMovieVideos } from "../services/tmdb";
 
@@ -270,6 +270,35 @@ export default function DetailScreen({ route, navigation }) {
     }
   }, [movie, authLoading, userUid]);
 
+  // -----------------------------
+  // 7.5) HeaderRight: Favori bookmark kisa aksiyon
+  // -----------------------------
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Pressable
+          onPress={handleToggleFavorite}
+          disabled={favoriteLoading || authLoading || !movie?.id}
+          style={({ pressed }) => [
+            styles.headerIconButton,
+            pressed && styles.headerIconButtonPressed,
+            (favoriteLoading || authLoading || !movie?.id) && styles.headerIconButtonDisabled,
+          ]}
+        >
+          {favoriteLoading ? (
+            <ActivityIndicator size="small" color={theme.colors.accent} />
+          ) : (
+            <Ionicons
+              name={favorite ? "bookmark" : "bookmark-outline"}
+              size={22}
+              color={favorite ? theme.colors.accent : theme.colors.textSecondary}
+            />
+          )}
+        </Pressable>
+      ),
+    });
+  }, [navigation, favorite, favoriteLoading, authLoading, movie?.id, handleToggleFavorite]);
+
   
 
   // -----------------------------
@@ -428,6 +457,13 @@ export default function DetailScreen({ route, navigation }) {
             onPress={() => navigation.goBack()}
           />
         </View>
+
+        <Button
+          title="View Favorites"
+          variant="ghost"
+          onPress={() => navigation.navigate("Tabs", { screen: "Favorites" })}
+          style={styles.viewFavoritesButton}
+        />
       </ScrollView>
           <Modal
               visible={imageViewerOpen}
@@ -579,6 +615,24 @@ viewerTopBar: {
 viewerIndexText: {
   color: theme.colors.textSecondary,
 },
+
+  headerIconButton: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: theme.radius.md,
+  },
+  headerIconButtonPressed: {
+    backgroundColor: theme.colors.card,
+  },
+  headerIconButtonDisabled: {
+    opacity: 0.6,
+  },
+  viewFavoritesButton: {
+    alignSelf: "center",
+    marginTop: theme.spacing.sm,
+  },
 
 });
 function ImageCarousel({ images, startIndex = 0, onIndexChange }) {
