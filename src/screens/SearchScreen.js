@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Keyboard, View, FlatList, Pressable, StyleSheet } from "react-native";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { View, FlatList, Pressable, StyleSheet } from "react-native";
 import ScreenContainer from "../components/ScreenContainer";
 import LoadingState from "../components/LoadingState";
 import EmptyState from "../components/EmptyState";
@@ -38,8 +38,12 @@ export default function SearchScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const handleChangeText = useCallback((text) => {
+    setQuery(text);
+  }, []);
+
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(query.trim()), 400);
+    const timer = setTimeout(() => setDebouncedQuery(query.trim()), 300);
     return () => clearTimeout(timer);
   }, [query]);
 
@@ -48,9 +52,11 @@ export default function SearchScreen({ navigation }) {
 
     async function runSearch() {
       if (!debouncedQuery) {
-        setResults([]);
-        setError(null);
-        setLoading(false);
+        if (active) {
+          setResults([]);
+          setError(null);
+          setLoading(false);
+        }
         return;
       }
 
@@ -79,84 +85,69 @@ export default function SearchScreen({ navigation }) {
         <Text variant="caption">Find your next movie</Text>
         <SearchInput
           value={query}
-          onChangeText={setQuery}
+          onChangeText={handleChangeText}
           placeholder="Search movies..."
           autoCapitalize="none"
         />
       </View>
     );
-  }, [query]);
+  }, [query, handleChangeText]);
 
-  const handleSelect = (item) => navigation.navigate("Detail", { id: item.id, title: item.title });
+  const listEmpty = useMemo(() => {
+    if (loading) {
+      return <LoadingState title="Searching..." subtitle="Looking up movies" />;
+    }
 
-  if (loading && results.length === 0) {
-    return (
-      <ScreenContainer>
-        <LoadingState title="Searching..." subtitle="Looking up movies" />
-      </ScreenContainer>
-    );
-  }
+    if (error) {
+      return <EmptyState title="Search failed" subtitle={error} />;
+    }
 
-  if (error) {
-    return (
-      <ScreenContainer>
-        <EmptyState title="Search failed" subtitle={error} />
-      </ScreenContainer>
-    );
-  }
+    if (!debouncedQuery) {
+      return <EmptyState title="Start typing" subtitle="Search for movies by title." />;
+    }
 
-  if (!debouncedQuery) {
-    return (
-      <ScreenContainer>
-        <View style={styles.container}>
-          {listHeader}
-          <EmptyState title="Start typing" subtitle="Search for movies by title." />
-        </View>
-      </ScreenContainer>
-    );
-  }
+    return <EmptyState title="No results" subtitle="Try a different search term." />;
+  }, [loading, error, debouncedQuery]);
 
-  if (!loading && results.length === 0) {
-    return (
-      <ScreenContainer>
-        <View style={styles.container}>
-          {listHeader}
-          <EmptyState title="No results" subtitle="Try a different search term." />
-        </View>
-      </ScreenContainer>
-    );
-  }
+  const handleSelect = useCallback(
+    (item) => navigation.navigate("Detail", { id: item.id, title: item.title }),
+    [navigation]
+  );
+
+  const renderItem = useCallback(
+    ({ item }) => <SearchResultItem item={item} onPress={handleSelect} />,
+    [handleSelect]
+  );
+
+  const keyExtractor = useCallback((item) => String(item.id), []);
 
   return (
     <ScreenContainer>
       <FlatList
         data={results}
-        keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => <SearchResultItem item={item} onPress={handleSelect} />}
-        contentContainerStyle={styles.list}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        contentContainerStyle={[styles.list, results.length === 0 && styles.listEmpty]}
         ListHeaderComponent={listHeader}
+        ListEmptyComponent={listEmpty}
         showsVerticalScrollIndicator={false}
-        // iOS/Android: liste kaydirilirken klavye otomatik kapanir.
         keyboardDismissMode="on-drag"
-        keyboardShouldPersistTaps="handled"
-        onScrollBeginDrag={Keyboard.dismiss}
+        keyboardShouldPersistTaps="always"
       />
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: theme.spacing.lg,
-    gap: theme.spacing.lg,
-  },
   header: {
     gap: theme.spacing.sm,
   },
   list: {
     padding: theme.spacing.lg,
     gap: theme.spacing.lg,
+  },
+  listEmpty: {
+    flexGrow: 1,
   },
   card: {
     flexDirection: "row",
