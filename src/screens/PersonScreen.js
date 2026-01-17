@@ -1,5 +1,7 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
-import { Dimensions, FlatList, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Dimensions, FlatList, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import ScreenContainer from "../components/ScreenContainer";
 import LoadingState from "../components/LoadingState";
 import EmptyState from "../components/EmptyState";
@@ -7,17 +9,21 @@ import Text from "../components/Text";
 import Card from "../components/Card";
 import PosterImage from "../components/PosterImage";
 import Button from "../components/Button";
+import RatingBadge from "../components/RatingBadge";
 import SearchInput from "../components/SearchInput";
 import theme from "../theme";
 import { buildCastPhotoUrl, buildPosterUrl } from "../constants/images";
+import { AuthContext } from "../firebase/AuthContext";
 import {
   getPersonDetails,
   getPersonImages,
   getPersonMovieCredits,
+  getMovieExternalIds,
   searchPeople,
 } from "../services/tmdb";
+import { isFavoritePerson, toggleFavoritePerson } from "../utils/favoritePeopleStorage";
 
-function PersonFilmographyItem({ item, onPress }) {
+function PersonFilmographyItem({ item, onPress, imdbId }) {
   return (
     <Pressable onPress={() => onPress(item)}>
       <Card style={styles.filmCard}>
@@ -32,6 +38,10 @@ function PersonFilmographyItem({ item, onPress }) {
           <Text variant="caption" numberOfLines={1} style={styles.metaText}>
             {item.release_date || "Release date unknown"}
           </Text>
+          <View style={styles.ratingRow}>
+            <RatingBadge value={item.vote_average} />
+            
+          </View>
         </View>
       </Card>
     </Pressable>
@@ -39,6 +49,8 @@ function PersonFilmographyItem({ item, onPress }) {
 }
 
 export default function PersonScreen({ route, navigation }) {
+  const { user, loading: authLoading } = useContext(AuthContext);
+  const userUid = user?.uid;
   const personId = route?.params?.personId;
   const personName = route?.params?.name;
 
@@ -50,6 +62,14 @@ export default function PersonScreen({ route, navigation }) {
   const [bioExpanded, setBioExpanded] = useState(false);
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [imageIndex, setImageIndex] = useState(0);
+  const insets = useSafeAreaInsets();
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const listRef = useRef(null);
+  const scrollYRef = useRef(0);
+  const savedScrollYRef = useRef(0);
+  const imdbCacheRef = useRef({});
+  const [imdbMap, setImdbMap] = useState({});
 
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -63,6 +83,72 @@ export default function PersonScreen({ route, navigation }) {
   useLayoutEffect(() => {
     navigation.setOptions({ title: personName || person?.name || "Person" });
   }, [navigation, personName, person?.name]);
+
+  const handleTogglePersonFavorite = useCallback(async (e) => {
+    e?.stopPropagation?.();
+    if (authLoading || favoriteLoading || !person) return;
+    setFavoriteLoading(true);
+    try {
+      const result = await toggleFavoritePerson(userUid, {
+        id: person.id,
+        name: person.name,
+        profile_path: person.profile_path,
+        known_for_department: person.known_for_department,
+        place_of_birth: person.place_of_birth,
+      });
+      setIsFavorite(result.isFavorite);
+    } finally {
+      setFavoriteLoading(false);
+    }
+  }, [authLoading, favoriteLoading, person, userUid]);
+
+  const handleGoFavoritePeople = useCallback((e) => {
+    e?.stopPropagation?.();
+    navigation.navigate("FavoritePeople");
+  }, [navigation]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={styles.headerIconRow}>
+          <Pressable
+            onPress={handleTogglePersonFavorite}
+            disabled={authLoading || favoriteLoading || !person}
+            hitSlop={16}
+            style={({ pressed }) => [
+              styles.headerIconButton,
+              pressed && styles.headerIconButtonPressed,
+              (authLoading || favoriteLoading || !person) && styles.headerIconButtonDisabled,
+            ]}
+          >
+            {favoriteLoading ? (
+              <ActivityIndicator size="small" color={theme.colors.accent} />
+            ) : (
+              <Ionicons
+                name={isFavorite ? "bookmark" : "bookmark-outline"}
+                size={22}
+                color={isFavorite ? theme.colors.accent : theme.colors.textSecondary}
+              />
+            )}
+          </Pressable>
+          <Pressable
+            onPress={handleGoFavoritePeople}
+            hitSlop={16}
+            style={({ pressed }) => [
+              styles.headerIconButton,
+              pressed && styles.headerIconButtonPressed,
+            ]}
+          >
+            <Ionicons
+              name="heart"
+              size={22}
+              color={theme.colors.accent}
+            />
+          </Pressable>
+        </View>
+      ),
+    });
+  }, [navigation, authLoading, favoriteLoading, isFavorite, handleTogglePersonFavorite, handleGoFavoritePeople, person]);
 
   const loadPerson = useCallback(async () => {
     if (!personId) {
@@ -93,6 +179,21 @@ export default function PersonScreen({ route, navigation }) {
   useEffect(() => {
     loadPerson();
   }, [loadPerson]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadFavorite() {
+      if (authLoading || !personId) return;
+      const value = await isFavoritePerson(userUid, personId);
+      if (active) setIsFavorite(value);
+    }
+
+    loadFavorite();
+    return () => {
+      active = false;
+    };
+  }, [authLoading, personId, userUid]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), 300);
@@ -165,11 +266,33 @@ export default function PersonScreen({ route, navigation }) {
   );
 
   const renderFilmography = useCallback(
-    ({ item }) => <PersonFilmographyItem item={item} onPress={handleSelectMovie} />,
-    [handleSelectMovie]
+    ({ item }) => (
+      <PersonFilmographyItem
+        item={item}
+        onPress={handleSelectMovie}
+        imdbId={imdbMap[item.id]}
+      />
+    ),
+    [handleSelectMovie, imdbMap]
   );
 
   const keyExtractor = useCallback((item) => String(item.id), []);
+
+  const handleToggleBio = useCallback(() => {
+    if (!bioExpanded) {
+      savedScrollYRef.current = scrollYRef.current;
+      setBioExpanded(true);
+      return;
+    }
+
+    setBioExpanded(false);
+    setTimeout(() => {
+      listRef.current?.scrollToOffset({
+        offset: savedScrollYRef.current,
+        animated: true,
+      });
+    }, 0);
+  }, [bioExpanded]);
 
   const listHeader = useMemo(() => {
     return (
@@ -255,7 +378,7 @@ export default function PersonScreen({ route, navigation }) {
           <Button
             title={bioExpanded ? "Read less" : "Read more"}
             variant="ghost"
-            onPress={() => setBioExpanded((prev) => !prev)}
+            onPress={handleToggleBio}
             style={styles.readMoreButton}
           />
         </View>
@@ -318,7 +441,44 @@ export default function PersonScreen({ route, navigation }) {
     knownAs,
     images,
     openImageViewer,
+    handleToggleBio,
   ]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadImdbIds() {
+      const list = filmography.slice(0, 40);
+      const missing = list.filter((item) => !imdbCacheRef.current[item.id]);
+
+      if (!missing.length) return;
+
+      try {
+        const results = await Promise.all(
+          missing.map(async (item) => {
+            const data = await getMovieExternalIds(item.id);
+            return { id: item.id, imdbId: data?.imdb_id || null };
+          })
+        );
+
+        if (!active) return;
+
+        const nextMap = { ...imdbCacheRef.current };
+        results.forEach((row) => {
+          nextMap[row.id] = row.imdbId;
+        });
+        imdbCacheRef.current = nextMap;
+        setImdbMap(nextMap);
+      } catch {
+        // Ignore IMDb fetch errors; keep N/A in UI.
+      }
+    }
+
+    loadImdbIds();
+    return () => {
+      active = false;
+    };
+  }, [filmography]);
 
   if (loading) {
     return (
@@ -339,6 +499,7 @@ export default function PersonScreen({ route, navigation }) {
   return (
     <ScreenContainer>
       <FlatList
+        ref={listRef}
         data={filmography}
         keyExtractor={keyExtractor}
         renderItem={renderFilmography}
@@ -346,6 +507,10 @@ export default function PersonScreen({ route, navigation }) {
         ListHeaderComponent={listHeader}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        onScroll={(e) => {
+          scrollYRef.current = e.nativeEvent.contentOffset.y;
+        }}
+        scrollEventThrottle={16}
       />
 
       <ModalImageViewer
@@ -354,47 +519,38 @@ export default function PersonScreen({ route, navigation }) {
         startIndex={imageIndex}
         onClose={closeImageViewer}
         onIndexChange={setImageIndex}
+        insets={insets}
       />
     </ScreenContainer>
   );
 }
 
-function ModalImageViewer({ visible, images, startIndex, onClose, onIndexChange }) {
-  const { width, height } = Dimensions.get("window");
-
+function ModalImageViewer({ visible, images, startIndex, onClose, onIndexChange, insets }) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.viewerRoot}>
+      <View
+        style={[
+          styles.viewerRoot,
+          {
+            paddingTop: insets.top + theme.spacing.md,
+            paddingLeft: theme.spacing.lg,
+            paddingRight: theme.spacing.lg,
+            paddingBottom: insets.bottom + theme.spacing.lg,
+          },
+        ]}
+      >
         <View style={styles.viewerTopBar}>
           <Button title="Close" variant="ghost" onPress={onClose} />
           <Text variant="caption" style={styles.viewerIndexText}>
             {startIndex + 1} / {images.length}
           </Text>
         </View>
-        <ScrollView
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          contentOffset={{ x: startIndex * width, y: 0 }}
-          onMomentumScrollEnd={(e) => {
-            const idx = Math.round(e.nativeEvent.contentOffset.x / width);
-            onIndexChange?.(idx);
-          }}
-        >
-          {images.map((img) => (
-            <View
-              key={img.file_path}
-              style={{ width, height: height * 0.8, justifyContent: "center" }}
-            >
-              <PosterImage
-                uri={buildCastPhotoUrl(img.file_path, "original")}
-                width={width}
-                height={height * 0.8}
-                style={styles.viewerImage}
-              />
-            </View>
-          ))}
-        </ScrollView>
+
+        <ImageCarousel
+          images={images}
+          startIndex={startIndex}
+          onIndexChange={onIndexChange}
+        />
       </View>
     </Modal>
   );
@@ -493,17 +649,17 @@ const styles = StyleSheet.create({
   metaText: {
     color: theme.colors.textSecondary,
   },
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.sm,
+  },
+  imdbText: {
+    color: theme.colors.textSecondary,
+  },
   viewerRoot: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    flex: 1,
     backgroundColor: "#000",
-    paddingTop: theme.spacing.lg,
-    paddingLeft: theme.spacing.lg,
-    paddingRight: theme.spacing.lg,
-    paddingBottom: theme.spacing.lg,
   },
   viewerTopBar: {
     flexDirection: "row",
@@ -517,4 +673,55 @@ const styles = StyleSheet.create({
   viewerImage: {
     borderRadius: theme.radius.md,
   },
+  headerIconButton: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: theme.radius.md,
+    zIndex: 3,
+    elevation: 3,
+  },
+  headerIconRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.xs,
+  },
+  headerIconButtonPressed: {
+    backgroundColor: theme.colors.card,
+  },
+  headerIconButtonDisabled: {
+    opacity: 0.6,
+  },
 });
+
+function ImageCarousel({ images, startIndex = 0, onIndexChange }) {
+  const { width, height } = Dimensions.get("window");
+
+  return (
+    <ScrollView
+      horizontal
+      pagingEnabled
+      showsHorizontalScrollIndicator={false}
+      contentOffset={{ x: startIndex * width, y: 0 }}
+      onMomentumScrollEnd={(e) => {
+        const idx = Math.round(e.nativeEvent.contentOffset.x / width);
+        onIndexChange?.(idx);
+      }}
+    >
+      {images.map((img) => (
+        <View
+          key={img.file_path}
+          style={{ width, height: height * 0.8, justifyContent: "center" }}
+        >
+          <PosterImage
+            uri={buildCastPhotoUrl(img.file_path, "original")}
+            width={width}
+            height={height * 0.8}
+            style={styles.viewerImage}
+          />
+        </View>
+      ))}
+    </ScrollView>
+  );
+}

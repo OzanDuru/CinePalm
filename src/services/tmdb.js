@@ -37,7 +37,11 @@ export function getMovieImages(id) {
 
 export function getMovieVideos(id) {
   return request(`/movie/${id}/videos`);
-} 
+}
+
+export function getMovieExternalIds(id) {
+  return request(`/movie/${id}/external_ids`);
+}
 
 // --- People / Person endpoints ---
 export function getPersonDetails(personId) {
