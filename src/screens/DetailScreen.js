@@ -3,7 +3,7 @@
 // TMDB API'den çekip gösterir. Ayrıca "Favorite" (favori) toggle işlemini yapar.
 // Favoriler bu örnekte AUTH'a (Firebase user) bağlı değil -> cihazın local storage'ında tutulur.
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Dimensions, Image, Linking, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { getMovieVideos } from "../services/tmdb";
@@ -41,6 +41,7 @@ import { buildPosterUrl, buildCastPhotoUrl, buildBackdropUrl } from "../constant
 
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AuthContext } from "../firebase/AuthContext";
 
 
 
@@ -68,6 +69,9 @@ function pickBestTrailerKey(videos) {
 
 
 export default function DetailScreen({ route, navigation }) {
+  const { user, loading: authLoading } = useContext(AuthContext);
+  const userUid = user?.uid;
+
   // -----------------------------
   // 1) Route parametresi: HomeScreen'den buraya navigate ederken id göndermiştin:
   //    navigation.navigate("Detail", { id: item.id, title: item.title })
@@ -199,6 +203,9 @@ export default function DetailScreen({ route, navigation }) {
     let active = true;
 
     async function loadFavorite() {
+      // Auth halen yükleniyorsa (Firebase init), favori kontrolünü ertele.
+      if (authLoading) return;
+
       // movie daha yoksa kontrol etmeye gerek yok
       if (!movie?.id) return;
 
@@ -208,7 +215,8 @@ export default function DetailScreen({ route, navigation }) {
       try {
         // Local storage sorgusu:
         // checkFavorite(movie.id) -> true/false döndürür
-        const value = await checkFavorite(movie.id);
+        // userUid null ise storage otomatik "guest" key'ine düşer.
+        const value = await checkFavorite(userUid, movie.id);
 
         // ekran hâlâ aktifse state set et (unmount olduysa set etme)
         if (active) setFavorite(value);
@@ -224,7 +232,7 @@ export default function DetailScreen({ route, navigation }) {
     return () => {
       active = false;
     };
-  }, [movie]);
+  }, [movie, authLoading, userUid]);
 
   // -----------------------------
   // 7) Favori ekle/çıkar işlemi (toggle)
@@ -232,6 +240,9 @@ export default function DetailScreen({ route, navigation }) {
   // Kullanıcı "Add Favorite" butonuna basınca çalışır.
   // Local storage'a yazma işlemi burada.
   const handleToggleFavorite = useCallback(async () => {
+    // Auth halen yükleniyorsa işleme izin verme (UID hazır olmayabilir).
+    if (authLoading) return;
+
     if (!movie) return; // güvenlik
 
     // Butonu disable etmek + kullanıcıya "işlem oluyor" hissi için
@@ -241,7 +252,7 @@ export default function DetailScreen({ route, navigation }) {
       // toggleFavorite: local storage'daki favorites listesinde bu film varsa çıkarır, yoksa ekler.
       // Buraya movie objesinin gerekli alanlarını gönderiyoruz.
       // (storage'a gereksiz dev JSON basmak istemiyoruz)
-      const result = await toggleFavorite({
+      const result = await toggleFavorite(userUid, {
         id: movie.id,
         title: movie.title,
         poster_path: movie.poster_path,
@@ -257,7 +268,7 @@ export default function DetailScreen({ route, navigation }) {
       // işlem bitti
       setFavoriteLoading(false);
     }
-  }, [movie]);
+  }, [movie, authLoading, userUid]);
 
   
 
@@ -404,7 +415,8 @@ export default function DetailScreen({ route, navigation }) {
             onPress={handleToggleFavorite}
 
             // favori kontrolü/işlemi sürerken butonu kilitle
-            disabled={favoriteLoading}
+            // Auth init sırasında ve favori işleminde buton disable.
+            disabled={favoriteLoading || authLoading}
           />
 
           <View style={styles.spacer} />

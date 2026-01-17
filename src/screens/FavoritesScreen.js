@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import { View, FlatList, Pressable, StyleSheet } from "react-native";
 import ScreenContainer from "../components/ScreenContainer";
 import LoadingState from "../components/LoadingState";
@@ -12,6 +12,7 @@ import theme from "../theme";
 import { getFavorites, removeFavorite } from "../utils/favoritesStorage";
 import { buildPosterUrl } from "../constants/images";
 import { useIsFocused } from "@react-navigation/native";
+import { AuthContext } from "../firebase/AuthContext";
 
 function FavoriteItem({ item, onPress, onRemove }) {
   return (
@@ -34,6 +35,8 @@ function FavoriteItem({ item, onPress, onRemove }) {
 }
 
 export default function FavoritesScreen({ navigation }) {
+  const { user, loading: authLoading } = useContext(AuthContext);
+  const userUid = user?.uid;
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -43,25 +46,32 @@ export default function FavoritesScreen({ navigation }) {
     setLoading(true);
     setError(null);
     try {
-      const data = await getFavorites();
+      // userUid null ise storage otomatik "guest" key'ine gider.
+      const data = await getFavorites(userUid);
       setFavorites(data);
     } catch (err) {
       setError(err?.message || "Failed to load favorites.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userUid]);
 
   useEffect(() => {
+    if (authLoading) return;
     if (isFocused) loadFavorites();
-  }, [isFocused, loadFavorites]);
+  }, [authLoading, isFocused, loadFavorites]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    loadFavorites();
+  }, [authLoading, userUid, loadFavorites]);
 
   const handleRemove = useCallback(
     async (id) => {
-      const updated = await removeFavorite(id);
+      const updated = await removeFavorite(userUid, id);
       setFavorites(updated);
     },
-    [setFavorites]
+    [setFavorites, userUid]
   );
 
   const handleSelect = (item) => navigation.navigate("Detail", { id: item.id, title: item.title });
