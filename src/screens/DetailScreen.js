@@ -4,9 +4,10 @@
 // Favoriler bu örnekte AUTH'a (Firebase user) bağlı değil -> cihazın local storage'ında tutulur.
 
 import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Dimensions, Image, Linking, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { getMovieVideos } from "../services/tmdb";
+import YoutubePlayer from "react-native-youtube-iframe";
 
 
 // Uygulama genelinde "güvenli alan" (notch/status bar) + arkaplan rengi vb. standart layout
@@ -87,11 +88,40 @@ export default function DetailScreen({ route, navigation }) {
   const [movie, setMovie] = useState(null);
   const insets = useSafeAreaInsets();
   const [trailerKey, setTrailerKey] = useState(null);
-  const watchUrl = useMemo(() => {
-    if (!trailerKey) return null;
-    return `https://www.youtube.com/watch?v=${trailerKey}`;
+  const [trailerOpen, setTrailerOpen] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [playerReady, setPlayerReady] = useState(false);
+  const [playerError, setPlayerError] = useState(null);
+  const playerWidth = useMemo(() => {
+    const maxWidth = 560;
+    const horizontalPadding = theme.spacing.lg * 2;
+    return Math.min(Dimensions.get("window").width - horizontalPadding, maxWidth);
+  }, []);
+
+  const closeTrailer = useCallback(() => {
+    setPlaying(false);
+    setTrailerOpen(false);
+    setPlayerReady(false);
+    setPlayerError(null);
+    console.log("TRAILER_CLOSE");
+  }, []);
+
+  const openTrailer = useCallback(() => {
+    if (!trailerKey) return;
+    console.log("TRAILER_OPEN key:", trailerKey);
+    setPlayerError(null);
+    setPlayerReady(false);
+    setTrailerOpen(true);
+    setPlaying(true);
   }, [trailerKey]);
 
+  const retryTrailer = useCallback(() => {
+    if (!trailerKey) return;
+    console.log("TRAILER_RETRY key:", trailerKey);
+    setPlayerError(null);
+    setPlayerReady(false);
+    setPlaying(true);
+  }, [trailerKey]);
 
   // loading: detay API çekilirken "LoadingState" göstermek için kontrol bayrağı
   const [loading, setLoading] = useState(true);
@@ -354,13 +384,13 @@ export default function DetailScreen({ route, navigation }) {
             width={260}
             style={styles.poster}
           />
-          {watchUrl ? (
+          {trailerKey ? (
             <Pressable
               style={({ pressed }) => [
                 styles.trailerButton,
                 pressed && styles.trailerButtonPressed,
               ]}
-              onPress={() => Linking.openURL(watchUrl)}
+              onPress={openTrailer}
             >
               <Ionicons name="play" size={20} color={theme.colors.background} />
             </Pressable>
@@ -465,6 +495,63 @@ export default function DetailScreen({ route, navigation }) {
           style={styles.viewFavoritesButton}
         />
       </ScrollView>
+
+      <Modal visible={trailerOpen} transparent animationType="fade" onRequestClose={closeTrailer}>
+        <View style={styles.trailerOverlay}>
+          <View style={styles.trailerCard}>
+            <Pressable style={styles.trailerCloseButton} onPress={closeTrailer}>
+              <Ionicons name="close" size={20} color={theme.colors.accent} />
+            </Pressable>
+            {!playerReady && !playerError ? (
+              <View style={styles.trailerLoader}>
+                <ActivityIndicator size="small" color={theme.colors.accent} />
+                <Text variant="caption" style={styles.trailerLoaderText}>
+                  Loading trailer...
+                </Text>
+              </View>
+            ) : null}
+            {playerError ? (
+              <View style={styles.trailerErrorBox}>
+                <Text variant="caption" style={styles.trailerErrorText}>
+                  {playerError}
+                </Text>
+                <Button title="Retry" variant="ghost" onPress={retryTrailer} />
+              </View>
+            ) : null}
+            <View style={[styles.trailerPlayerFrame, { width: playerWidth }]}>
+              <YoutubePlayer
+                height={(playerWidth * 9) / 16}
+                play={playing}
+                videoId={trailerKey}
+                onReady={() => {
+                  console.log("TRAILER_READY");
+                  setPlayerReady(true);
+                }}
+                onError={(e) => {
+                  const msg = typeof e === "string" ? e : JSON.stringify(e);
+                  console.log("TRAILER_ERROR:", msg);
+                  setPlayerError(msg || "Failed to load trailer.");
+                }}
+                onChangeState={(state) => {
+                  console.log("TRAILER_STATE:", state);
+                  if (state === "ended") setPlaying(false);
+                }}
+                initialPlayerParams={{
+                  controls: true,
+                  modestbranding: true,
+                  rel: false,
+                  playsinline: true,
+                }}
+                webViewProps={{
+                  allowsFullscreenVideo: true,
+                  mediaPlaybackRequiresUserAction: false,
+                }}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
           <Modal
               visible={imageViewerOpen}
               animationType="fade"
@@ -576,6 +663,58 @@ const styles = StyleSheet.create({
   },
   trailerButtonPressed: {
     opacity: 0.8,
+  },
+  trailerOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.9)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: theme.spacing.lg,
+  },
+  trailerCard: {
+    width: "100%",
+    maxWidth: 560,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing.md,
+    alignItems: "center",
+    gap: theme.spacing.sm,
+  },
+  trailerCloseButton: {
+    alignSelf: "flex-end",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: theme.colors.accent,
+  },
+  trailerPlayerFrame: {
+    width: "100%",
+    aspectRatio: 16 / 9,
+    borderRadius: theme.radius.md,
+    overflow: "hidden",
+    backgroundColor: theme.colors.background,
+  },
+  trailerLoader: {
+    alignItems: "center",
+    gap: theme.spacing.xs,
+  },
+  trailerLoaderText: {
+    color: theme.colors.textSecondary,
+  },
+  trailerErrorBox: {
+    width: "100%",
+    padding: theme.spacing.sm,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.accent,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    gap: theme.spacing.xs,
+  },
+  trailerErrorText: {
+    color: theme.colors.textSecondary,
   },
 
   spacer: {
