@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { View, FlatList, Pressable, StyleSheet } from "react-native";
+import { Keyboard, View, FlatList, Pressable, StyleSheet } from "react-native";
 import ScreenContainer from "../components/ScreenContainer";
 import LoadingState from "../components/LoadingState";
 import EmptyState from "../components/EmptyState";
@@ -136,6 +136,10 @@ export default function SearchScreen({ navigation }) {
         contentContainerStyle={styles.list}
         ListHeaderComponent={listHeader}
         showsVerticalScrollIndicator={false}
+        // iOS/Android: liste kaydirilirken klavye otomatik kapanir.
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+        onScrollBeginDrag={Keyboard.dismiss}
       />
     </ScreenContainer>
   );

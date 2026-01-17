@@ -1,7 +1,7 @@
 // src/screens/RegisterScreen.js
 import React, { useState } from "react";
 import { View, TextInput, StyleSheet, Alert, Image } from "react-native";
-import ScreenContainer from "../components/ScreenContainer";
+import KeyboardScreen from "../components/KeyboardScreen";
 import Text from "../components/Text";
 import Button from "../components/Button";
 import Card from "../components/Card";
@@ -42,7 +42,8 @@ export default function RegisterScreen({ navigation }) {
   }
 
   return (
-    <ScreenContainer>
+    // KeyboardScreen: klavye acilinca icerik kayabilir + tap ile kapanir.
+    <KeyboardScreen>
       <View style={styles.container}>
         <View style={styles.hero}>
           <Text variant="title">Register</Text>
@@ -89,7 +90,7 @@ export default function RegisterScreen({ navigation }) {
 
        
       </View>
-    </ScreenContainer>
+    </KeyboardScreen>
   );
 }
 
