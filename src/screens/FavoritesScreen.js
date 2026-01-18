@@ -1,5 +1,7 @@
-import React, { useCallback, useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useMemo, useState } from "react";
 import { View, FlatList, Pressable, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import ScreenContainer from "../components/ScreenContainer";
 import LoadingState from "../components/LoadingState";
 import EmptyState from "../components/EmptyState";
@@ -10,11 +12,78 @@ import RatingBadge from "../components/RatingBadge";
 import Button from "../components/Button";
 import theme from "../theme";
 import { getFavorites, removeFavorite } from "../utils/favoritesStorage";
-import { buildPosterUrl } from "../constants/images";
-import { useIsFocused } from "@react-navigation/native";
+import { getFavoritePeople, toggleFavoritePerson } from "../utils/favoritePeopleStorage";
+import { buildPosterUrl, buildCastPhotoUrl } from "../constants/images";
 import { AuthContext } from "../firebase/AuthContext";
 
-function FavoriteItem({ item, onPress, onRemove }) {
+const SEGMENTS = {
+  MOVIES: "movies",
+  PEOPLE: "people",
+};
+
+function FavoritesSegmentedControl({ active, counts, onChange }) {
+  return (
+    <View style={styles.segmentWrap}>
+      <Pressable
+        onPress={() => onChange(SEGMENTS.MOVIES)}
+        style={[
+          styles.segmentItem,
+          active === SEGMENTS.MOVIES ? styles.segmentActive : styles.segmentInactive,
+        ]}
+      >
+        <Ionicons
+          name={active === SEGMENTS.MOVIES ? "film" : "film-outline"}
+          size={18}
+          color={active === SEGMENTS.MOVIES ? "#111" : theme.colors.textSecondary}
+        />
+        <Text
+          variant="caption"
+          style={[
+            styles.segmentText,
+            active === SEGMENTS.MOVIES ? styles.segmentTextActive : styles.segmentTextInactive,
+          ]}
+        >
+          Movies
+        </Text>
+        <View style={styles.segmentBadge}>
+          <Text variant="caption" style={styles.segmentBadgeText}>
+            {counts.movies}
+          </Text>
+        </View>
+      </Pressable>
+
+      <Pressable
+        onPress={() => onChange(SEGMENTS.PEOPLE)}
+        style={[
+          styles.segmentItem,
+          active === SEGMENTS.PEOPLE ? styles.segmentActive : styles.segmentInactive,
+        ]}
+      >
+        <Ionicons
+          name={active === SEGMENTS.PEOPLE ? "people" : "people-outline"}
+          size={18}
+          color={active === SEGMENTS.PEOPLE ? "#111" : theme.colors.textSecondary}
+        />
+        <Text
+          variant="caption"
+          style={[
+            styles.segmentText,
+            active === SEGMENTS.PEOPLE ? styles.segmentTextActive : styles.segmentTextInactive,
+          ]}
+        >
+          People
+        </Text>
+        <View style={styles.segmentBadge}>
+          <Text variant="caption" style={styles.segmentBadgeText}>
+            {counts.people}
+          </Text>
+        </View>
+      </Pressable>
+    </View>
+  );
+}
+
+function FavoriteMovieItem({ item, onPress, onRemove }) {
   return (
     <Card style={styles.card}>
       <Pressable style={styles.cardTapArea} onPress={() => onPress(item)}>
@@ -23,7 +92,7 @@ function FavoriteItem({ item, onPress, onRemove }) {
           <Text variant="subtitle" numberOfLines={2}>
             {item.title}
           </Text>
-          <Text variant="caption" numberOfLines={2} style={styles.overview}>
+          <Text variant="caption" numberOfLines={2} style={styles.metaText}>
             {item.overview || "No overview available."}
           </Text>
           <RatingBadge value={item.vote_average} />
@@ -34,21 +103,57 @@ function FavoriteItem({ item, onPress, onRemove }) {
   );
 }
 
+function FavoritePersonItem({ item, onPress, onRemove }) {
+  return (
+    <Card style={styles.card}>
+      <Pressable style={styles.cardTapArea} onPress={() => onPress(item)}>
+        <PosterImage uri={buildCastPhotoUrl(item.profile_path)} width={80} height={120} />
+        <View style={styles.cardContent}>
+          <Text variant="subtitle" numberOfLines={2}>
+            {item.name}
+          </Text>
+          <Text variant="caption" numberOfLines={1} style={styles.metaText}>
+            {item.known_for_department || "Department unknown"}
+          </Text>
+          <Text variant="caption" numberOfLines={1} style={styles.metaText}>
+            {item.place_of_birth || "Birth place unknown"}
+          </Text>
+        </View>
+      </Pressable>
+      <Pressable style={styles.removeIcon} onPress={() => onRemove(item)} hitSlop={12}>
+        <Ionicons name="close" size={18} color={theme.colors.accent} />
+      </Pressable>
+    </Card>
+  );
+}
+
 export default function FavoritesScreen({ navigation }) {
   const { user, loading: authLoading } = useContext(AuthContext);
   const userUid = user?.uid;
-  const [favorites, setFavorites] = useState([]);
+  const [activeSegment, setActiveSegment] = useState(SEGMENTS.MOVIES);
+  const [movieFavorites, setMovieFavorites] = useState([]);
+  const [peopleFavorites, setPeopleFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const isFocused = useIsFocused();
 
-  const loadFavorites = useCallback(async () => {
+  const counts = useMemo(
+    () => ({
+      movies: movieFavorites.length,
+      people: peopleFavorites.length,
+    }),
+    [movieFavorites.length, peopleFavorites.length]
+  );
+
+  const loadAllFavorites = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      // userUid null ise storage otomatik "guest" key'ine gider.
-      const data = await getFavorites(userUid);
-      setFavorites(data);
+      const [movies, people] = await Promise.all([
+        getFavorites(userUid),
+        getFavoritePeople(userUid),
+      ]);
+      setMovieFavorites(movies);
+      setPeopleFavorites(people);
     } catch (err) {
       setError(err?.message || "Failed to load favorites.");
     } finally {
@@ -56,30 +161,59 @@ export default function FavoritesScreen({ navigation }) {
     }
   }, [userUid]);
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (isFocused) loadFavorites();
-  }, [authLoading, isFocused, loadFavorites]);
-
-  useEffect(() => {
-    if (authLoading) return;
-    loadFavorites();
-  }, [authLoading, userUid, loadFavorites]);
-
-  const handleRemove = useCallback(
-    async (id) => {
-      const updated = await removeFavorite(userUid, id);
-      setFavorites(updated);
-    },
-    [setFavorites, userUid]
+  useFocusEffect(
+    useCallback(() => {
+      if (authLoading) return;
+      loadAllFavorites();
+    }, [authLoading, loadAllFavorites])
   );
 
-  const handleSelect = (item) => navigation.navigate("Detail", { id: item.id, title: item.title });
+  const handleSelectMovie = useCallback(
+    (item) => navigation.navigate("Detail", { id: item.id, title: item.title }),
+    [navigation]
+  );
+
+  const handleSelectPerson = useCallback(
+    (item) => navigation.navigate("Person", { personId: item.id, name: item.name }),
+    [navigation]
+  );
+
+  const handleRemoveMovie = useCallback(
+    async (id) => {
+      const updated = await removeFavorite(userUid, id);
+      setMovieFavorites(updated);
+    },
+    [userUid]
+  );
+
+  const handleRemovePerson = useCallback(
+    async (item) => {
+      const result = await toggleFavoritePerson(userUid, item);
+      setPeopleFavorites(result.favorites);
+    },
+    [userUid]
+  );
+
+  const renderMovie = useCallback(
+    ({ item }) => (
+      <FavoriteMovieItem item={item} onPress={handleSelectMovie} onRemove={handleRemoveMovie} />
+    ),
+    [handleSelectMovie, handleRemoveMovie]
+  );
+
+  const renderPerson = useCallback(
+    ({ item }) => (
+      <FavoritePersonItem item={item} onPress={handleSelectPerson} onRemove={handleRemovePerson} />
+    ),
+    [handleSelectPerson, handleRemovePerson]
+  );
+
+  const keyExtractor = useCallback((item) => String(item.id), []);
 
   if (loading) {
     return (
       <ScreenContainer>
-        <LoadingState title="Loading favorites..." subtitle="Fetching your list" />
+        <LoadingState title="Loading favorites..." subtitle="Fetching your lists" />
       </ScreenContainer>
     );
   }
@@ -87,39 +221,53 @@ export default function FavoritesScreen({ navigation }) {
   if (error) {
     return (
       <ScreenContainer>
-        <EmptyState title="Unable to load" subtitle={error} actionLabel="Retry" onAction={loadFavorites} />
-      </ScreenContainer>
-    );
-  }
-
-  if (!favorites.length) {
-    return (
-      <ScreenContainer>
-        <EmptyState title="No favorites yet" subtitle="Add movies from the Detail screen." />
+        <EmptyState title="Unable to load" subtitle={error} actionLabel="Retry" onAction={loadAllFavorites} />
       </ScreenContainer>
     );
   }
 
   return (
     <ScreenContainer>
+      <View style={styles.header}>
+        <Text variant="title">Favorites</Text>
+        <Text variant="caption">Your saved movies and people</Text>
+        <FavoritesSegmentedControl
+          active={activeSegment}
+          counts={counts}
+          onChange={setActiveSegment}
+        />
+      </View>
+
       <FlatList
-        data={favorites}
-        keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => (
-          <FavoriteItem item={item} onPress={handleSelect} onRemove={handleRemove} />
-        )}
-        contentContainerStyle={styles.list}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <Text variant="title">Favorites</Text>
-            <Text variant="caption">Your saved movies</Text>
-            <Button
-              title="View Favorite People"
-              variant="ghost"
-              onPress={() => navigation.navigate("FavoritePeople")}
-              style={styles.favoritePeopleButton}
-            />
-          </View>
+        data={movieFavorites}
+        keyExtractor={keyExtractor}
+        renderItem={renderMovie}
+        contentContainerStyle={[
+          styles.list,
+          activeSegment !== SEGMENTS.MOVIES && styles.listHidden,
+        ]}
+        ListEmptyComponent={
+          <EmptyState
+            title="No favorite movies yet"
+            subtitle="Save movies from the Detail screen."
+          />
+        }
+        showsVerticalScrollIndicator={false}
+      />
+
+      <FlatList
+        data={peopleFavorites}
+        keyExtractor={keyExtractor}
+        renderItem={renderPerson}
+        contentContainerStyle={[
+          styles.list,
+          activeSegment !== SEGMENTS.PEOPLE && styles.listHidden,
+        ]}
+        ListEmptyComponent={
+          <EmptyState
+            title="No favorite people yet"
+            subtitle="Save actors from the Person screen."
+          />
         }
         showsVerticalScrollIndicator={false}
       />
@@ -128,15 +276,62 @@ export default function FavoritesScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  header: {
+    padding: theme.spacing.lg,
+    gap: theme.spacing.xs,
+  },
+  segmentWrap: {
+    marginTop: theme.spacing.sm,
+    flexDirection: "row",
+    borderRadius: theme.radius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: theme.spacing.xs,
+    backgroundColor: theme.colors.surface,
+    gap: theme.spacing.xs,
+  },
+  segmentItem: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: theme.spacing.xs,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.radius.lg,
+  },
+  segmentActive: {
+    backgroundColor: theme.colors.accent,
+  },
+  segmentInactive: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  segmentText: {
+    fontWeight: theme.typography.weights.bold,
+  },
+  segmentTextActive: {
+    color: "#111",
+  },
+  segmentTextInactive: {
+    color: theme.colors.textSecondary,
+  },
+  segmentBadge: {
+    backgroundColor: theme.colors.accent,
+    borderRadius: theme.radius.lg,
+    paddingHorizontal: theme.spacing.xs,
+    paddingVertical: 2,
+  },
+  segmentBadgeText: {
+    color: "#111",
+    fontWeight: theme.typography.weights.bold,
+  },
   list: {
     padding: theme.spacing.lg,
     gap: theme.spacing.lg,
   },
-  header: {
-    gap: theme.spacing.xs,
-  },
-  favoritePeopleButton: {
-    alignSelf: "flex-start",
+  listHidden: {
+    display: "none",
   },
   card: {
     flexDirection: "row",
@@ -153,7 +348,17 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: theme.spacing.xs,
   },
-  overview: {
+  metaText: {
     color: theme.colors.textSecondary,
+  },
+  removeIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: theme.colors.accent,
+    backgroundColor: "rgba(0,0,0,0.6)",
   },
 });
