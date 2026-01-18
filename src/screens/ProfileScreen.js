@@ -119,17 +119,7 @@ export default function ProfileScreen({ navigation }) {
   }, [navigation]);
 
   const handleResetPassword = useCallback(() => {
-    const routes = navigation.getState?.()?.routeNames ?? [];
-    const parentRoutes = navigation.getParent?.()?.getState?.()?.routeNames ?? [];
-    if (routes.includes("ResetPassword")) {
-      navigation.navigate("ResetPassword");
-      return;
-    }
-    if (parentRoutes.includes("ResetPassword")) {
-      navigation.getParent()?.navigate("ResetPassword");
-      return;
-    }
-    Alert.alert("Info", "Reset Password screen not available.");
+    navigation.navigate("ResetPassword");
   }, [navigation]);
 
   return (

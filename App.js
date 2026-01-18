@@ -136,6 +136,7 @@ function AppStack() {
       <AppStackNav.Screen name="Detail" component={DetailScreen} options={{ title: "Detail",headerBackTitle: "Back" }} />
       <AppStackNav.Screen name="Person" component={PersonScreen} options={{ title: "Person", headerBackTitle: "Back" }} />
       <AppStackNav.Screen name="FavoritePeople" component={FavoritePeopleScreen} options={{ title: "Favorite People", headerBackTitle: "Back" }} />
+      <AppStackNav.Screen name="ResetPassword" component={ResetPasswordScreen} options={{ title: "Reset Password", headerBackTitle: "Back" }} />
     </AppStackNav.Navigator>
   );
 }
