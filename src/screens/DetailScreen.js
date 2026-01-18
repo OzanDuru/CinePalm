@@ -3,8 +3,8 @@
 // TMDB API'den çekip gösterir. Ayrıca "Favorite" (favori) toggle işlemini yapar.
 // Favoriler bu örnekte AUTH'a (Firebase user) bağlı değil -> cihazın local storage'ında tutulur.
 
-import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Animated, Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { getMovieVideos } from "../services/tmdb";
 import YoutubePlayer from "react-native-youtube-iframe";
@@ -87,6 +87,7 @@ export default function DetailScreen({ route, navigation }) {
   // movie: TMDB'den dönen detay objesi (title, genres, overview, poster_path, vote_average, release_date vs.)
   const [movie, setMovie] = useState(null);
   const insets = useSafeAreaInsets();
+  const fabOpacity = useRef(new Animated.Value(0.7)).current;
   const [trailerKey, setTrailerKey] = useState(null);
   const [trailerOpen, setTrailerOpen] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -375,6 +376,27 @@ export default function DetailScreen({ route, navigation }) {
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
+        onScrollBeginDrag={() => {
+          Animated.timing(fabOpacity, {
+            toValue: 0,
+            duration: 150,
+            useNativeDriver: true,
+          }).start();
+        }}
+        onScrollEndDrag={() => {
+          Animated.timing(fabOpacity, {
+            toValue: 0.7,
+            duration: 200,
+            useNativeDriver: true,
+          }).start();
+        }}
+        onMomentumScrollEnd={() => {
+          Animated.timing(fabOpacity, {
+            toValue: 0.7,
+            duration: 200,
+            useNativeDriver: true,
+          }).start();
+        }}
       >
        
         <View style={styles.posterWrap}>
@@ -499,6 +521,16 @@ export default function DetailScreen({ route, navigation }) {
           style={styles.viewFavoritesButton}
         />
       </ScrollView>
+
+      <Animated.View style={[styles.fabWrap, { opacity: fabOpacity, bottom: insets.bottom + theme.spacing.lg }]}>
+        <Pressable
+          style={styles.fabButton}
+          onPress={() => navigation.navigate("Tabs", { screen: "HomeTab", params: { screen: "Home" } })}
+          hitSlop={12}
+        >
+          <Ionicons name="home" size={20} color={theme.colors.accent} />
+        </Pressable>
+      </Animated.View>
 
       <Modal visible={trailerOpen} transparent animationType="fade" onRequestClose={closeTrailer}>
         <View style={styles.trailerOverlay}>
@@ -775,6 +807,21 @@ viewerIndexText: {
   viewFavoritesButton: {
     alignSelf: "center",
     marginTop: theme.spacing.sm,
+  },
+  fabWrap: {
+    position: "absolute",
+    right: theme.spacing.lg,
+    zIndex: 5,
+  },
+  fabButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderWidth: 1,
+    borderColor: theme.colors.accent,
   },
 
 });

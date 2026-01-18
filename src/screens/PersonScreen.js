@@ -1,7 +1,8 @@
 import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Dimensions, FlatList, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Animated, Dimensions, FlatList, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import ScreenContainer from "../components/ScreenContainer";
 import LoadingState from "../components/LoadingState";
 import EmptyState from "../components/EmptyState";
@@ -65,6 +66,7 @@ export default function PersonScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const fabOpacity = useRef(new Animated.Value(0.7)).current;
   const listRef = useRef(null);
   const scrollYRef = useRef(0);
   const savedScrollYRef = useRef(0);
@@ -106,6 +108,12 @@ export default function PersonScreen({ route, navigation }) {
     e?.stopPropagation?.();
     navigation.navigate("FavoritePeople");
   }, [navigation]);
+
+  const refreshFavoriteStatus = useCallback(async () => {
+    if (authLoading || !person?.id) return;
+    const value = await isFavoritePerson(userUid, person.id);
+    setIsFavorite(value);
+  }, [authLoading, person?.id, userUid]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -181,19 +189,14 @@ export default function PersonScreen({ route, navigation }) {
   }, [loadPerson]);
 
   useEffect(() => {
-    let active = true;
+    refreshFavoriteStatus();
+  }, [refreshFavoriteStatus]);
 
-    async function loadFavorite() {
-      if (authLoading || !personId) return;
-      const value = await isFavoritePerson(userUid, personId);
-      if (active) setIsFavorite(value);
-    }
-
-    loadFavorite();
-    return () => {
-      active = false;
-    };
-  }, [authLoading, personId, userUid]);
+  useFocusEffect(
+    useCallback(() => {
+      refreshFavoriteStatus();
+    }, [refreshFavoriteStatus])
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), 300);
@@ -496,6 +499,26 @@ export default function PersonScreen({ route, navigation }) {
     );
   }
 
+  const goHome = () => {
+    navigation.navigate("Tabs", { screen: "HomeTab", params: { screen: "Home" } });
+  };
+
+  const hideFab = () => {
+    Animated.timing(fabOpacity, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const showFab = () => {
+    Animated.timing(fabOpacity, {
+      toValue: 0.7,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  };
+
   return (
     <ScreenContainer>
       <FlatList
@@ -511,7 +534,16 @@ export default function PersonScreen({ route, navigation }) {
           scrollYRef.current = e.nativeEvent.contentOffset.y;
         }}
         scrollEventThrottle={16}
+        onScrollBeginDrag={hideFab}
+        onScrollEndDrag={showFab}
+        onMomentumScrollEnd={showFab}
       />
+
+      <Animated.View style={[styles.fabWrap, { opacity: fabOpacity, bottom: insets.bottom + theme.spacing.lg }]}>
+        <Pressable style={styles.fabButton} onPress={goHome} hitSlop={12}>
+          <Ionicons name="home" size={20} color={theme.colors.accent} />
+        </Pressable>
+      </Animated.View>
 
       <ModalImageViewer
         visible={imageViewerOpen}
@@ -692,6 +724,21 @@ const styles = StyleSheet.create({
   },
   headerIconButtonDisabled: {
     opacity: 0.6,
+  },
+  fabWrap: {
+    position: "absolute",
+    right: theme.spacing.lg,
+    zIndex: 5,
+  },
+  fabButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderWidth: 1,
+    borderColor: theme.colors.accent,
   },
 });
 

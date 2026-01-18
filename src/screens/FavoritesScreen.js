@@ -113,6 +113,12 @@ export default function FavoritesScreen({ navigation }) {
           <View style={styles.header}>
             <Text variant="title">Favorites</Text>
             <Text variant="caption">Your saved movies</Text>
+            <Button
+              title="View Favorite People"
+              variant="ghost"
+              onPress={() => navigation.navigate("FavoritePeople")}
+              style={styles.favoritePeopleButton}
+            />
           </View>
         }
         showsVerticalScrollIndicator={false}
@@ -128,6 +134,9 @@ const styles = StyleSheet.create({
   },
   header: {
     gap: theme.spacing.xs,
+  },
+  favoritePeopleButton: {
+    alignSelf: "flex-start",
   },
   card: {
     flexDirection: "row",
