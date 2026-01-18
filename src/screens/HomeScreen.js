@@ -88,7 +88,7 @@ function MovieListItem({ item, onPress }) {
           </Text>
 
           {/* Sarı TMDB puanı (kart içinde). */}
-          <RatingBadge value={item.vote_average} />
+          <RatingBadge value={item.vote_average} style={styles.posterBadge} />
         </View>
       </Card>
     </Pressable>
